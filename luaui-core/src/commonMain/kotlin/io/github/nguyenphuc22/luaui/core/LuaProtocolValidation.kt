@@ -82,11 +82,12 @@ object LuaProtocolValidator {
                     path = "$path.id",
                     message = "Node ID '${node.id.value}' is used more than once in this screen.",
                 )
+                return
             }
 
-            requiredByTree += LuaCapabilities.requiredBy(node)
             when (node) {
                 is LuaColumnNode -> {
+                    requiredByTree += LuaCapabilities.column
                     if (node.children.size > limits.maxChildrenPerColumn) {
                         issues += issue(
                             code = "column_child_limit_exceeded",
@@ -100,6 +101,7 @@ object LuaProtocolValidator {
                 }
 
                 is LuaTextNode -> {
+                    requiredByTree += LuaCapabilities.text
                     if (node.text.length > limits.maxTextLength) {
                         issues += issue(
                             code = "text_length_exceeded",
@@ -110,6 +112,8 @@ object LuaProtocolValidator {
                 }
 
                 is LuaButtonNode -> {
+                    requiredByTree += LuaCapabilities.button
+                    requiredByTree += LuaCapabilities.requiredBy(node.onClick)
                     if (node.label.length > limits.maxButtonLabelLength) {
                         issues += issue(
                             code = "button_label_length_exceeded",

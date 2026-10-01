@@ -1,6 +1,6 @@
 # Lộ trình LuaUI
 
-> **Status:** Foundation 0.1 in progress; các milestone sau vẫn Planned
+> **Status:** Foundation 0.1 reference baseline implemented; Runtime 0.2 Phase 1 đang triển khai; các milestone sau vẫn Planned
 >
 > Đây là thứ tự hiện thực theo Architecture Blueprint v1, không phải cam kết ngày phát hành hoặc danh sách tính năng đã sẵn sàng.
 
@@ -25,13 +25,14 @@ Chỉ sau khi đường này hoạt động, các khả năng dynamic/offline/fu
 
 Contract thực thi đầu tiên được chốt tại [Protocol 0.1](specs/protocol-0.1.md). Nó cố ý hẹp hơn architecture đích để chứng minh vertical slice trước.
 
-**Tiến độ hiện tại:** `main` đã có Gradle multi-module scaffold, core typed contract + validation, Server DSL, HTTP JSON/Ktor reference transport, KSP-generated Material 3 dispatcher, Compose Desktop sample và CI. Proto3 canonical schema + JVM compatibility adapter cùng unit/integration/compatibility tests đang được hiện thực trên nhánh feature. Tất cả vẫn là `0.1.0-SNAPSHOT`, không phải release ổn định.
+**Tiến độ hiện tại:** `main` đã có Gradle multi-module scaffold, core typed contract + validation, Server DSL, HTTP JSON/Ktor reference transport, KSP-generated Material 3 dispatcher, Compose Desktop sample, Proto3 canonical schema + JVM compatibility adapter và CI. Tất cả vẫn là `0.1.0-SNAPSHOT`, không phải release ổn định.
 
 **Definition of success:** Một server DSL tạo screen typed, client decode/validate/render bằng generated dispatcher, user dispatch một action và server phản hồi qua contract đã kiểm thử.
 
 ## 0.2 — Runtime
 
-- NodeStore và StateStore;
+- **Phase 1 đang triển khai:** NodeStore bất biến, screen-scoped và full-screen snapshot replacement; xem [NodeStore 0.2](specs/runtime-node-store-0.2.md).
+- StateStore cho local UI state;
 - navigation, expressions và design tokens;
 - cache + error boundary;
 - Inspector cơ bản;

@@ -35,6 +35,27 @@ class LuaProtocolValidationTest {
     }
 
     @Test
+    fun `cyclic in-memory trees are rejected without recursive overflow`() {
+        val children = mutableListOf<LuaNode>()
+        val root = LuaColumnNode(
+            id = LuaNodeId("dashboard.root"),
+            children = children,
+        )
+        children += root
+        val screen = LuaScreen(
+            id = LuaScreenId("dashboard"),
+            root = root,
+            requiredCapabilities = LuaCapabilities.requiredBy(root),
+        )
+
+        val result = assertIs<LuaScreenValidationResult.Invalid>(
+            LuaProtocolValidator.validateScreen(screen),
+        )
+
+        assertTrue(result.issues.any { issue -> issue.code == "duplicate_node_id" })
+    }
+
+    @Test
     fun `missing client capability is rejected before rendering`() {
         val result = assertIs<LuaScreenValidationResult.Invalid>(
             LuaProtocolValidator.validateScreen(

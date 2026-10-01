@@ -59,6 +59,8 @@ Quy tắc ownership khi patch va chạm local edit, draft persistence và confli
 
 Tree giữ quan hệ cấu trúc; `NodeStore` giữ index `NodeId → LuaNode`. Nhờ stable ID, runtime không cần traverse toàn bộ tree để tìm node cần update.
 
+Runtime 0.2 Phase 1 hiện thực `LuaNodeStore` như snapshot/index bất biến, screen-scoped sau validation. Nó giữ parent relation và child order, nhưng chưa thêm patch/revision hay local StateStore; xem [NodeStore 0.2](../specs/runtime-node-store-0.2.md).
+
 ```text
 Patch → Patch validator → NodeStore lookup → Tree reconciliation
       → invalidate relevant state → Compose recomposition

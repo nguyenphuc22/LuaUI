@@ -1,6 +1,6 @@
 # LuaUI Proto3 0.1 — Canonical schema compatibility spike
 
-> **Status:** In progress
+> **Status:** Accepted for the Foundation 0.1 compatibility spike
 >
 > **Scope:** Canonical Proto3 schema, generated JVM bindings and typed compatibility adapter for Foundation 0.1. This is not a stable public wire API and does not switch the HTTP sample away from JSON.
 

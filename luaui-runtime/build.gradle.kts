@@ -1,7 +1,5 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.compose)
-    alias(libs.plugins.compose.compiler)
 }
 
 kotlin {
@@ -11,8 +9,9 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":luaui-core"))
-            api(project(":luaui-runtime"))
-            implementation(libs.compose.runtime)
+        }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
     }
 }
