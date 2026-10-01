@@ -7,7 +7,7 @@
 
 LuaUI giúp backend mô tả **cái gì** cần hiển thị, còn ứng dụng khách quyết định **hiển thị như thế nào** bằng UI native của từng nền tảng. Mục tiêu là thay đổi cấu trúc, nội dung và hành vi khai báo của màn hình mà không phải phát hành lại ứng dụng, nhưng chỉ trong giới hạn capability mà client đã cài đặt.
 
-> **Trạng thái hiện tại — Foundation 0.1 đã có reference baseline.** `main` có vertical slice Compose Desktop, canonical Proto3 compatibility contract và CI đã kiểm thử. Runtime 0.2 NodeStore Phase 1 đang được hiện thực trên nhánh feature. Đây vẫn là `0.1.0-SNAPSHOT`: chưa có API/wire contract ổn định, artefact phát hành hay cam kết production support.
+> **Trạng thái hiện tại — Foundation 0.1 đã có reference baseline.** `main` có vertical slice Compose Desktop, canonical Proto3 compatibility contract, Runtime 0.2 NodeStore Phase 1 và CI đã kiểm thử. Runtime 0.2 ScreenStore Phase 2 đang được hiện thực trên nhánh feature. Đây vẫn là `0.1.0-SNAPSHOT`: chưa có API/wire contract ổn định, artefact phát hành hay cam kết production support.
 
 ## Tại sao LuaUI?
 
@@ -93,7 +93,7 @@ Server DSL → LuaNode → Serialize → Transport → Decode
           → KSP dispatcher → Compose → LuaAction → Server
 ```
 
-Foundation reference gồm `luaui-core`, `luaui-compose`, `luaui-material3`, `luaui-annotations`, `luaui-ksp`, `luaui-transport`, `luaui-server` và `sample`. Compatibility spike thêm `luaui-proto` (schema/bindings) cùng `luaui-proto-jvm` (adapter), không mở rộng transport. Runtime 0.2 Phase 1 thêm `luaui-runtime` cho NodeStore snapshot/index; patch, WebSocket, gRPC và offline persistence vẫn là các bước sau.
+Foundation reference gồm `luaui-core`, `luaui-compose`, `luaui-material3`, `luaui-annotations`, `luaui-ksp`, `luaui-transport`, `luaui-server` và `sample`. Compatibility spike thêm `luaui-proto` (schema/bindings) cùng `luaui-proto-jvm` (adapter), không mở rộng transport. Runtime 0.2 thêm `luaui-runtime`: NodeStore Phase 1 đã cung cấp snapshot/index, còn ScreenStore Phase 2 đang hoàn thiện lifecycle full-screen; patch, WebSocket, gRPC và offline persistence vẫn là các bước sau.
 
 Xem chi tiết tại [lộ trình](docs/roadmap.md).
 
@@ -110,6 +110,7 @@ Xem chi tiết tại [lộ trình](docs/roadmap.md).
 | Xem contract thực thi hiện tại | [Protocol 0.1](docs/specs/protocol-0.1.md) |
 | Review schema canonical compatibility spike | [Proto3 0.1](docs/specs/protobuf-0.1.md) |
 | Review NodeStore Runtime Phase 1 | [Runtime NodeStore 0.2](docs/specs/runtime-node-store-0.2.md) |
+| Review ScreenStore Runtime Phase 2 | [Runtime ScreenStore 0.2](docs/specs/runtime-screen-store-0.2.md) |
 | Xem các quyết định kiến trúc bền vững | [Architecture Decision Records](docs/adr/README.md) |
 | Xem thuật ngữ chuẩn | [Glossary](docs/reference/glossary.md) |
 | Bắt đầu đóng góp | [CONTRIBUTING.md](CONTRIBUTING.md) |

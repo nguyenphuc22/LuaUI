@@ -160,7 +160,7 @@ class LuaNodeStore private constructor(
     }
 }
 
-private class ImmutableList<T>(values: Collection<T>) : AbstractList<T>() {
+internal class ImmutableList<T>(values: Collection<T>) : AbstractList<T>() {
     private val snapshot = values.toList()
 
     override val size: Int
@@ -169,7 +169,7 @@ private class ImmutableList<T>(values: Collection<T>) : AbstractList<T>() {
     override fun get(index: Int): T = snapshot[index]
 }
 
-private class ImmutableSet<T>(values: Collection<T>) : AbstractSet<T>() {
+internal class ImmutableSet<T>(values: Collection<T>) : AbstractSet<T>() {
     private val membership = values.toSet()
     private val iterationOrder = ImmutableList(membership)
 

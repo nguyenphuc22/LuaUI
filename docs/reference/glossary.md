@@ -13,6 +13,7 @@
 | **LuaTree Builder** | Thành phần Server SDK tạo typed tree từ DSL và business data. |
 | **Lua Runtime** | Client runtime xử lý definition, validation, state boundary, action, patch, navigation và render dispatch. |
 | **NodeStore** | Snapshot/index screen-scoped bất biến từ `NodeId → LuaNode` cùng quan hệ tree để lookup hiệu quả và chuẩn bị cho patch. |
+| **ScreenStore** | State machine screen-scoped bất biến biến typed response thành `Loading`, `Ready`, `Incompatible` hoặc `Failure`; host sở hữu observable UI state và thay một successor hoàn chỉnh. |
 | **LuaAction** | Mô tả hành động declarative do user interaction hoặc runtime dispatch. |
 | **Expression** | AST typed/allowlisted cho logic UI động, không phải executable code. |
 | **Patch** | Thay đổi tăng dần vào definition thay vì tải lại toàn bộ screen. |
