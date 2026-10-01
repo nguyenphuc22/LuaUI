@@ -33,6 +33,7 @@ Một ADR cần nêu bối cảnh, quyết định, hệ quả và liên kết �
 ## Chuẩn pull request
 
 - Giới hạn thay đổi vào một mục tiêu có thể review.
+- Chạy `./gradlew check` trước khi mở PR; workflow **Verify** phải đạt trước khi merge.
 - Cập nhật docs khi public API, wire contract, metric, feature status hoặc cách sử dụng thay đổi.
 - Thêm test tương ứng: unit cho logic, integration cho ranh giới client–server, compatibility cho evolution, và fault test cho payload lỗi.
 - Không tuyên bố benchmark hoặc production support nếu chưa có dữ liệu và tiêu chí được công bố.

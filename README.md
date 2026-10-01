@@ -1,5 +1,7 @@
 # LuaUI
 
+[![Verify](https://github.com/nguyenphuc22/LuaUI/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/nguyenphuc22/LuaUI/actions/workflows/verify.yml)
+
 > **A type-safe, full-stack Server-Driven UI framework for Kotlin Multiplatform and Compose Multiplatform.**
 > *Weave dynamic interfaces across platforms.*
 
