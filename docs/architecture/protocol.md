@@ -2,7 +2,7 @@
 
 > **Status:** Accepted architecture (Blueprint v1)
 >
-> **Scope:** Contract đích giữa Server SDK và Client Runtime; đây chưa phải là file `.proto` hay API wire đã phát hành.
+> **Scope:** Contract đích giữa Server SDK và Client Runtime. Foundation 0.1 có [Proto3 compatibility schema](../specs/protobuf-0.1.md), nhưng chưa có API wire đã phát hành.
 >
 > **Quy ước:** “BẮT BUỘC” chỉ ra invariant của contract; chi tiết chưa chốt được ghi là Open.
 
@@ -39,7 +39,7 @@ Stable ID là key chung cho NodeStore, patch, state reconciliation, lazy key, an
 
 ## Schema và serialization
 
-Protobuf là canonical/recommended path của kiến trúc. `kotlinx.serialization`/JSON là đường thay thế để phục vụ transport hoặc môi trường không dùng Protobuf. Cả hai phải ánh xạ vào **cùng một semantic contract**; serialization không được tạo hai loại component hoặc hai model compatibility khác nhau.
+Protobuf là canonical/recommended path của kiến trúc. Foundation 0.1 dùng [Proto3 source](../../luaui-proto/src/main/proto/luaui/v1/luaui.proto) cùng generated JVM adapter để kiểm chứng hướng này; `kotlinx.serialization`/JSON vẫn là HTTP reference. Cả hai ánh xạ vào **cùng một semantic contract**; serialization không được tạo hai loại component hoặc hai model compatibility khác nhau.
 
 | Quyết định | Hệ quả |
 | --- | --- |
@@ -48,7 +48,7 @@ Protobuf là canonical/recommended path của kiến trúc. `kotlinx.serializati
 | Schema evolution có chủ đích | Thay đổi public field phải có compatibility story và fixture test trước khi phát hành. |
 | Decode trước, runtime sau | Payload chưa validate không được đi vào renderer hay action handler. |
 
-Chính sách field presence, unknown-field behavior, JSON mapping và source of truth của schema cần được chốt trước khi tạo public wire format. Xem [câu hỏi mở](open-questions.md#schema--wire-format).
+Foundation 0.1 đã chốt Proto3 source và basic decode policy cho compatibility spike. Chính sách public field presence, unknown-field behavior, JSON mapping và release/deprecation vẫn cần được chốt trước khi công bố wire format. Xem [câu hỏi mở](open-questions.md#schema--wire-format).
 
 ## Versioning đa lớp
 

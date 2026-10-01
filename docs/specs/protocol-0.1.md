@@ -17,9 +17,9 @@ The reference client is Compose Desktop. The common model remains Kotlin Multipl
 
 ## Reference serialization decision
 
-Protobuf remains the recommended/canonical direction in the Architecture Blueprint. For the 0.1 spike, the HTTP adapter uses a **closed typed JSON model** serialized by `kotlinx.serialization`; it does not establish JSON as LuaUI's long-term canonical schema.
+Proto3 schema tại [luaui.proto](../../luaui-proto/src/main/proto/luaui/v1/luaui.proto) là canonical source cho compatibility spike 0.1. HTTP adapter vẫn dùng **closed typed JSON model** serialized by `kotlinx.serialization`; điều này không thiết lập JSON hay Proto3 hiện tại thành public/stable LuaUI wire API.
 
-The JSON model is deliberately closed and strict: no `JsonObject`, raw `bytes`, arbitrary maps or custom node escape hatch. A Protobuf code-generation/runtime compatibility spike is required before promoting any wire format to public/stable status.
+JSON model vẫn deliberately closed và strict: không `JsonObject`, raw `bytes`, arbitrary maps hay custom node escape hatch. Generated JVM bindings và mapper đã chứng minh JSON/Proto3 cùng semantic contract; xem [Proto3 0.1 spec](protobuf-0.1.md) trước khi mở rộng wire format.
 
 ## Envelope
 
@@ -72,4 +72,4 @@ For this closed 0.1 contract, unknown JSON fields and unknown polymorphic node/a
 
 ## Explicit deferrals
 
-This spec intentionally does **not** decide patch revision/ordering, dynamic capability fallback, custom component schemas, local state ownership, action payloads/retry, authentication, cache encryption or Protobuf code generation. Those items remain in [architecture open questions](../architecture/open-questions.md) and require their own ADR/spec before public release.
+This spec intentionally does **not** decide patch revision/ordering, dynamic capability fallback, custom component schemas, local state ownership, action payloads/retry, authentication, cache encryption, gRPC service or native Protobuf bindings. Those items remain in [architecture open questions](../architecture/open-questions.md) and require their own ADR/spec before public release.

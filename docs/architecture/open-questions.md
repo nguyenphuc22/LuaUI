@@ -13,7 +13,7 @@
 
 ## Schema & wire format
 
-- Protobuf và JSON lấy source of truth nào; JSON mapping và unknown field policy là gì?
+- Foundation 0.1 đã dùng Proto3 làm canonical compatibility source. JSON mapping public, unknown-field policy cross-version và tiêu chí nâng schema thành stable là gì?
 - Quy tắc add/remove/rename/changing semantics của field public là gì?
 - Required capability được encode/validate ở level screen hay từng node/action?
 - Error model có type/code/correlation ID nào và phần nào an toàn để hiển thị cho client?

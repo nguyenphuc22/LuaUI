@@ -7,7 +7,7 @@
 
 LuaUI giúp backend mô tả **cái gì** cần hiển thị, còn ứng dụng khách quyết định **hiển thị như thế nào** bằng UI native của từng nền tảng. Mục tiêu là thay đổi cấu trúc, nội dung và hành vi khai báo của màn hình mà không phải phát hành lại ứng dụng, nhưng chỉ trong giới hạn capability mà client đã cài đặt.
 
-> **Trạng thái hiện tại — Foundation 0.1 đang phát triển.** Nhánh `dev` có một vertical slice Compose Desktop chạy được và đã được kiểm thử. Đây vẫn là `0.1.0-SNAPSHOT`: chưa có API/wire contract ổn định, artefact phát hành hay cam kết production support.
+> **Trạng thái hiện tại — Foundation 0.1 đang phát triển.** `main` có vertical slice Compose Desktop chạy được và CI đã kiểm thử. Một Proto3 compatibility spike đang được hiện thực trên nhánh feature. Đây vẫn là `0.1.0-SNAPSHOT`: chưa có API/wire contract ổn định, artefact phát hành hay cam kết production support.
 
 ## Tại sao LuaUI?
 
@@ -52,7 +52,7 @@ LuaUI **không** là WebView, HTML renderer, JavaScript/Kotlin scripting runtime
 | Phần | Lựa chọn ưu tiên |
 | --- | --- |
 | Server | Kotlin, Ktor, LuaUI Server SDK |
-| Contract | Protobuf là hướng kiến trúc đích; 0.1 dùng typed JSON reference có kiểm thử |
+| Contract | Proto3 schema + JVM adapter là canonical compatibility spike đang triển khai; typed JSON vẫn là HTTP reference có kiểm thử |
 | Kết nối | HTTP/Ktor trong sample Desktop; gRPC và WebSocket là các bước sau |
 | Client | Kotlin Multiplatform, LuaUI Runtime, KSP, Compose Multiplatform |
 | Giao diện | Material 3 là mặc định, design-system adapter là first-class |
@@ -71,7 +71,7 @@ Server DSL → validated LuaScreen → HTTP JSON → decode + validate
            → Submit → full replacement screen
 ```
 
-Phạm vi cố ý hẹp: `Column`, `Text`, `Button`, `Submit`, exact capability `@1`, stable node ID, error response typed và full-screen replacement. Patch, custom component, TextField, expression, navigation, WebSocket/gRPC và offline chưa được hiện thực.
+Phạm vi cố ý hẹp: `Column`, `Text`, `Button`, `Submit`, exact capability `@1`, stable node ID, error response typed và full-screen replacement. Proto3 schema + adapter JVM chứng minh JSON/Protobuf cùng semantic model; HTTP sample vẫn dùng JSON. Patch, custom component, TextField, expression, navigation, WebSocket/gRPC và offline chưa được hiện thực.
 
 ## Chạy Foundation 0.1
 
@@ -93,7 +93,7 @@ Server DSL → LuaNode → Serialize → Transport → Decode
           → KSP dispatcher → Compose → LuaAction → Server
 ```
 
-MVP gồm tám module: `luaui-core`, `luaui-compose`, `luaui-material3`, `luaui-annotations`, `luaui-ksp`, `luaui-transport`, `luaui-server` và `sample`. NodeStore, patch, WebSocket, gRPC và offline persistence chỉ được mở rộng sau khi vertical slice này hoạt động.
+MVP gồm tám module runtime/sample: `luaui-core`, `luaui-compose`, `luaui-material3`, `luaui-annotations`, `luaui-ksp`, `luaui-transport`, `luaui-server` và `sample`. Compatibility spike thêm `luaui-proto` (schema/bindings) cùng `luaui-proto-jvm` (adapter), không mở rộng transport. NodeStore, patch, WebSocket, gRPC và offline persistence chỉ được mở rộng sau khi vertical slice này hoạt động.
 
 Xem chi tiết tại [lộ trình](docs/roadmap.md).
 
@@ -108,6 +108,7 @@ Xem chi tiết tại [lộ trình](docs/roadmap.md).
 | Hiểu bảo mật, độ tin cậy, observability, hiệu năng và test | [Chất lượng & vận hành](docs/architecture/quality.md) |
 | Chạy hoặc review vertical slice hiện tại | [Foundation 0.1](docs/guides/foundation-0.1.md) |
 | Xem contract thực thi hiện tại | [Protocol 0.1](docs/specs/protocol-0.1.md) |
+| Review schema canonical compatibility spike | [Proto3 0.1](docs/specs/protobuf-0.1.md) |
 | Xem các quyết định kiến trúc bền vững | [Architecture Decision Records](docs/adr/README.md) |
 | Xem thuật ngữ chuẩn | [Glossary](docs/reference/glossary.md) |
 | Bắt đầu đóng góp | [CONTRIBUTING.md](CONTRIBUTING.md) |

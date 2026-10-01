@@ -32,3 +32,13 @@ Lệnh thứ hai tự khởi động Ktor server cục bộ tại `127.0.0.1:808
 Đây không phải bản demo của toàn bộ Blueprint. Nó chưa bao gồm patch/NodeStore, custom component, input/local state, expression, navigation, gRPC, WebSocket, offline/cache, Android/iOS sample, persistence, observability hay production security policy.
 
 Contract cụ thể nằm tại [Protocol 0.1](../specs/protocol-0.1.md). Mọi mở rộng public phải có compatibility story, tests và ADR khi phù hợp.
+
+## Proto3 compatibility spike
+
+Schema Proto3 canonical và adapter JVM được kiểm tra riêng, nhưng chưa thay thế HTTP JSON của sample:
+
+```bash
+./gradlew :luaui-proto:generateProto :luaui-proto-jvm:test
+```
+
+Xem [Proto3 0.1](../specs/protobuf-0.1.md) để biết nguồn schema, ranh giới platform và policy evolution.

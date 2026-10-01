@@ -46,6 +46,19 @@ class LuaProtocolValidationTest {
         assertTrue(result.issues.any { issue -> issue.code == "client_capability_missing" })
     }
 
+    @Test
+    fun `screen requests validate identifiers and client capabilities`() {
+        val issues = LuaProtocolValidator.validateScreenRequest(
+            LuaScreenRequest(
+                screenId = LuaScreenId("invalid id"),
+                clientCapabilities = setOf(LuaCapability("component.text", 0)),
+            ),
+        )
+
+        assertTrue(issues.any { issue -> issue.code == "invalid_identifier" })
+        assertTrue(issues.any { issue -> issue.code == "invalid_capability_version" })
+    }
+
     private fun dashboard(root: LuaNode = defaultRoot()): LuaScreen = LuaScreen(
         id = LuaScreenId("dashboard"),
         root = root,
