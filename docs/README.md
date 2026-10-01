@@ -1,6 +1,6 @@
 # Tài liệu LuaUI
 
-Đây là chỉ mục cho Architecture Blueprint v1 của LuaUI. Bộ tài liệu gồm kiến trúc đã chốt, delivery planned và các câu hỏi Open cần đặc tả; không mục nào là API đã phát hành hay inventory implementation hiện có.
+Đây là chỉ mục cho Architecture Blueprint v1 của LuaUI. Bộ tài liệu gồm kiến trúc đã chốt, Foundation 0.1 đang hiện thực, delivery planned và các câu hỏi Open cần đặc tả. Không mục nào là API hoặc wire contract đã phát hành ổn định.
 
 ## Điểm vào theo vai trò
 
@@ -10,6 +10,7 @@
 | Client engineer | [Runtime & rendering](architecture/runtime.md) → [Protocol](architecture/protocol.md) → [Quality & operations](architecture/quality.md) |
 | Server engineer | [Platform & integration](architecture/platform.md) → [Protocol](architecture/protocol.md) → [Runtime & rendering](architecture/runtime.md) |
 | Framework maintainer | [ADR index](adr/README.md) → toàn bộ `architecture/` → [Contributing](../CONTRIBUTING.md) |
+| Người muốn chạy sample | [Foundation 0.1](guides/foundation-0.1.md) → [Protocol 0.1](specs/protocol-0.1.md) |
 
 ## Bản đồ tài liệu
 
@@ -23,6 +24,10 @@ docs/
 │   ├── quality.md                # Security, errors, observability, tests
 │   └── open-questions.md         # Các spec/ADR cần chốt trước khi code sâu
 ├── adr/                          # Quyết định kiến trúc bền vững
+├── specs/
+│   └── protocol-0.1.md            # Contract đóng cho Foundation 0.1
+├── guides/
+│   └── foundation-0.1.md          # Cách chạy và phạm vi vertical slice
 ├── reference/
 │   └── glossary.md               # Thuật ngữ chuẩn hoá
 └── roadmap.md                    # Thứ tự hiện thực và tiêu chí 1.0
@@ -34,6 +39,7 @@ docs/
 | --- | --- |
 | **Accepted architecture** | Quyết định được Blueprint v1 chốt; implementation có thể chưa tồn tại. |
 | **MVP** | Phạm vi cần chứng minh ở vertical slice đầu tiên. |
+| **In progress** | Đang hiện thực và kiểm thử; chưa phải public/stable API. |
 | **Planned** | Hướng mở rộng sau MVP; không được mô tả như tính năng sẵn có. |
 | **Open** | Cần đặc tả hoặc ADR trước khi trở thành contract. |
 

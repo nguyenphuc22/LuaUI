@@ -6,7 +6,7 @@
 
 ## Stable ID & patch
 
-- Ai sinh stable ID: Server DSL, domain, hay client helper? Quy tắc uniqueness và lifecycle khi node di chuyển/đổi tên/xóa là gì?
+- Foundation 0.1 chốt ID explicit và unique trong một screen. Sau 0.1, ai sinh ID (Server DSL, domain hay client helper), scope cross-screen/session và lifecycle khi node di chuyển/đổi tên/xóa là gì?
 - Patch có `revision`/`baseRevision` không? Xử lý duplicate, out-of-order, replay và retry thế nào?
 - `Batch` có atomic không? Partial failure báo thế nào và tree có rollback không?
 - Patch conflict với local input/focus/draft được resolve theo ownership nào?

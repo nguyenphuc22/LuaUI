@@ -9,7 +9,7 @@
 | **UI definition** | Tree UI bất biến do server mô tả; không đồng nghĩa với local UI state. |
 | **Server state** | Data/configuration từ server như price, permission, product, title. |
 | **Local UI state** | State tương tác cục bộ như input, focus, scroll, gesture, animation, expanded state. |
-| **Stable ID** | ID ổn định của node, dùng làm key xuyên state/patch/test/analytics; scope và quy tắc uniqueness sẽ được đặc tả trước public API. |
+| **Stable ID** | ID ổn định của node, dùng làm key xuyên state/patch/test/analytics; Foundation 0.1 yêu cầu unique trong screen, còn scope/generator rộng hơn sẽ được đặc tả trước public API. |
 | **LuaTree Builder** | Thành phần Server SDK tạo typed tree từ DSL và business data. |
 | **Lua Runtime** | Client runtime xử lý definition, validation, state boundary, action, patch, navigation và render dispatch. |
 | **NodeStore** | Index `NodeId → LuaNode` cùng quan hệ tree để patch/lookup hiệu quả. |

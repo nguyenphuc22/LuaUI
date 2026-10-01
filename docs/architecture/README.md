@@ -41,7 +41,7 @@ flowchart LR
 ## Bất biến kiến trúc
 
 1. **Type-safe contract:** node, action và expression có kiểu; không dùng payload tự do để né schema.
-2. **Stable IDs:** mỗi node có ID ổn định; identity policy phải cho phép runtime resolve node một cách không mơ hồ trong screen hiện tại. ID là key cho NodeStore, patch, state, analytics, lazy list và test. Phạm vi/generator chính xác vẫn cần spec.
+2. **Stable IDs:** mỗi node có ID ổn định; identity policy phải cho phép runtime resolve node một cách không mơ hồ trong screen hiện tại. ID là key cho NodeStore, patch, state, analytics, lazy list và test. Foundation 0.1 chốt uniqueness trong một screen; scope/generator/migration rộng hơn vẫn cần spec.
 3. **Immutable definition:** screen/tree là definition bất biến; server state và local UI state có lifecycle riêng.
 4. **Generated runtime path:** KSP sinh registration/dispatcher/serializer/capability registry; không reflection, classpath scan hay dynamic invoke trong hot path.
 5. **Defensive client:** payload luôn decode và validate trước runtime; lỗi trở thành fallback quan sát được, không được làm app crash trực tiếp.
