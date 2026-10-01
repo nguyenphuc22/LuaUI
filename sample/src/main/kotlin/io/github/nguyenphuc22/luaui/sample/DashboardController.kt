@@ -22,6 +22,15 @@ class DashboardController : LuaScreenController {
     private val refreshCount = AtomicInteger(0)
 
     override suspend fun load(request: LuaScreenRequest): LuaScreenResponse {
+        val requestIssues = LuaProtocolValidator.validateScreenRequest(request)
+        if (requestIssues.isNotEmpty()) {
+            return LuaScreenResponse.Failure(
+                LuaError(
+                    code = LuaErrorCode.INVALID_REQUEST,
+                    message = "The LuaUI screen request is invalid.",
+                ),
+            )
+        }
         if (request.screenId != dashboardScreenId) {
             return LuaScreenResponse.Failure(notFound(request.screenId))
         }

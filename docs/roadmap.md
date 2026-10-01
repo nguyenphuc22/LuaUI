@@ -25,7 +25,7 @@ Chỉ sau khi đường này hoạt động, các khả năng dynamic/offline/fu
 
 Contract thực thi đầu tiên được chốt tại [Protocol 0.1](specs/protocol-0.1.md). Nó cố ý hẹp hơn architecture đích để chứng minh vertical slice trước.
 
-**Tiến độ hiện tại:** Gradle multi-module scaffold, core typed contract + validation, Server DSL, HTTP JSON/Ktor reference transport, KSP-generated Material 3 dispatcher, Compose Desktop sample và unit/integration tests đã có trên nhánh `dev`. Chúng vẫn là `0.1.0-SNAPSHOT`, không phải release ổn định.
+**Tiến độ hiện tại:** `main` đã có Gradle multi-module scaffold, core typed contract + validation, Server DSL, HTTP JSON/Ktor reference transport, KSP-generated Material 3 dispatcher, Compose Desktop sample và CI. Proto3 canonical schema + JVM compatibility adapter cùng unit/integration/compatibility tests đang được hiện thực trên nhánh feature. Tất cả vẫn là `0.1.0-SNAPSHOT`, không phải release ổn định.
 
 **Definition of success:** Một server DSL tạo screen typed, client decode/validate/render bằng generated dispatcher, user dispatch một action và server phản hồi qua contract đã kiểm thử.
 

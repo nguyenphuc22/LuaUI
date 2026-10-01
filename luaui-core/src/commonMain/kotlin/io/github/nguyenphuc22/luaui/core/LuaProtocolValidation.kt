@@ -46,26 +46,11 @@ object LuaProtocolValidator {
             )
         }
 
-        val capabilityNames = screen.requiredCapabilities.groupBy { capability -> capability.name }
-        capabilityNames
-            .filterValues { capabilities -> capabilities.size > 1 }
-            .forEach { (name, _) ->
-                issues += issue(
-                    code = "duplicate_capability_name",
-                    path = "screen.requiredCapabilities",
-                    message = "Capability '$name' is declared more than once.",
-                )
-            }
-        screen.requiredCapabilities.forEachIndexed { index, capability ->
-            validateIdentifier(capability.name, "screen.requiredCapabilities[$index].name", issues)
-            if (capability.version <= 0) {
-                issues += issue(
-                    code = "invalid_capability_version",
-                    path = "screen.requiredCapabilities[$index].version",
-                    message = "Capability version must be positive.",
-                )
-            }
-        }
+        appendCapabilityIssues(
+            capabilities = screen.requiredCapabilities,
+            path = "screen.requiredCapabilities",
+            issues = issues,
+        )
 
         val visitedIds = mutableSetOf<LuaNodeId>()
         val requiredByTree = mutableSetOf<LuaCapability>()
@@ -166,11 +151,27 @@ object LuaProtocolValidator {
         }
     }
 
+    fun validateScreenRequest(request: LuaScreenRequest): List<LuaValidationIssue> {
+        val issues = mutableListOf<LuaValidationIssue>()
+        validateIdentifier(request.screenId.value, "screenRequest.screenId", issues)
+        appendCapabilityIssues(
+            capabilities = request.clientCapabilities,
+            path = "screenRequest.clientCapabilities",
+            issues = issues,
+        )
+        return issues
+    }
+
     fun validateActionRequest(request: LuaActionRequest): List<LuaValidationIssue> {
         val issues = mutableListOf<LuaValidationIssue>()
         validateIdentifier(request.screenId.value, "action.screenId", issues)
         validateIdentifier(request.sourceNodeId.value, "action.sourceNodeId", issues)
         validateIdentifier(request.actionId.value, "action.actionId", issues)
+        appendCapabilityIssues(
+            capabilities = request.clientCapabilities,
+            path = "action.clientCapabilities",
+            issues = issues,
+        )
         return issues
     }
 
@@ -178,6 +179,17 @@ object LuaProtocolValidator {
         screen: LuaScreen,
         clientCapabilities: Set<LuaCapability>,
     ): Set<LuaCapability> = screen.requiredCapabilities - clientCapabilities
+
+    fun validateCapabilities(
+        capabilities: Set<LuaCapability>,
+        path: String = "capabilities",
+    ): List<LuaValidationIssue> = buildList {
+        appendCapabilityIssues(
+            capabilities = capabilities,
+            path = path,
+            issues = this,
+        )
+    }
 
     private fun validateIdentifier(
         value: String,
@@ -190,6 +202,33 @@ object LuaProtocolValidator {
                 path = path,
                 message = "Identifier must match ${identifierPattern.pattern}.",
             )
+        }
+    }
+
+    private fun appendCapabilityIssues(
+        capabilities: Set<LuaCapability>,
+        path: String,
+        issues: MutableList<LuaValidationIssue>,
+    ) {
+        capabilities
+            .groupBy { capability -> capability.name }
+            .filterValues { grouped -> grouped.size > 1 }
+            .forEach { (name, _) ->
+                issues += issue(
+                    code = "duplicate_capability_name",
+                    path = path,
+                    message = "Capability '$name' is declared more than once.",
+                )
+            }
+        capabilities.forEachIndexed { index, capability ->
+            validateIdentifier(capability.name, "$path[$index].name", issues)
+            if (capability.version <= 0) {
+                issues += issue(
+                    code = "invalid_capability_version",
+                    path = "$path[$index].version",
+                    message = "Capability version must be positive.",
+                )
+            }
         }
     }
 

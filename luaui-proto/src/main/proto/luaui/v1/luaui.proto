@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package luaui.v1;
+
+option java_multiple_files = true;
+option java_package = "io.github.nguyenphuc22.luaui.proto.v1";
+option java_outer_classname = "LuaUiV1Proto";
+
+// LuaUI Foundation 0.1 canonical semantic schema.
+// Field numbers and meanings are append-only. Never reuse a removed number or name.
+
+message Capability {
+  string name = 1;
+  int32 version = 2;
+}
+
+message Screen {
+  string id = 1;
+  int32 protocol_version = 2;
+  int32 schema_version = 3;
+  Node root = 4;
+  repeated Capability required_capabilities = 5;
+}
+
+message Node {
+  string id = 1;
+
+  oneof kind {
+    ColumnNode column = 2;
+    TextNode text = 3;
+    ButtonNode button = 4;
+  }
+}
+
+message ColumnNode {
+  repeated Node children = 1;
+}
+
+message TextNode {
+  string text = 1;
+}
+
+message ButtonNode {
+  string label = 1;
+  Action on_click = 2;
+}
+
+message Action {
+  string action_id = 1;
+
+  oneof kind {
+    SubmitAction submit = 2;
+  }
+}
+
+message SubmitAction {}
+
+message ScreenRequest {
+  string screen_id = 1;
+  repeated Capability client_capabilities = 2;
+}
+
+message ActionRequest {
+  string screen_id = 1;
+  string source_node_id = 2;
+  string action_id = 3;
+  repeated Capability client_capabilities = 4;
+}
+
+message ScreenResponse {
+  oneof result {
+    Screen screen = 1;
+    IncompatibleClient incompatible = 2;
+    LuaError failure = 3;
+  }
+}
+
+message IncompatibleClient {
+  repeated Capability missing_capabilities = 1;
+}
+
+message ActionResponse {
+  oneof result {
+    Screen screen = 1;
+    LuaError failure = 2;
+  }
+}
+
+message LuaError {
+  ErrorCode code = 1;
+  string message = 2;
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_INVALID_REQUEST = 1;
+  ERROR_CODE_INVALID_SCREEN = 2;
+  ERROR_CODE_INCOMPATIBLE_CLIENT = 3;
+  ERROR_CODE_NOT_FOUND = 4;
+  ERROR_CODE_UNAUTHORIZED_ACTION = 5;
+  ERROR_CODE_TRANSPORT = 6;
+}

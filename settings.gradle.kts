@@ -24,5 +24,7 @@ include(
     ":luaui-material3",
     ":luaui-transport",
     ":luaui-server",
+    ":luaui-proto",
+    ":luaui-proto-jvm",
     ":sample",
 )

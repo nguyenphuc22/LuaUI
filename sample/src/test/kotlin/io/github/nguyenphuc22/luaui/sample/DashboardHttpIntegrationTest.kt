@@ -2,6 +2,7 @@ package io.github.nguyenphuc22.luaui.sample
 
 import io.github.nguyenphuc22.luaui.core.LuaActionRequest
 import io.github.nguyenphuc22.luaui.core.LuaActionResponse
+import io.github.nguyenphuc22.luaui.core.LuaCapability
 import io.github.nguyenphuc22.luaui.core.LuaErrorCode
 import io.github.nguyenphuc22.luaui.core.LuaCapabilities
 import io.github.nguyenphuc22.luaui.core.LuaColumnNode
@@ -95,5 +96,30 @@ class DashboardHttpIntegrationTest {
 
         val failure = assertIs<LuaActionResponse.Failure>(response)
         assertEquals(LuaErrorCode.UNAUTHORIZED_ACTION, failure.error.code)
+    }
+
+    @Test
+    fun `server rejects invalid screen requests with the same semantics as the Proto3 mapper`() = testApplication {
+        application {
+            dashboardModule(DashboardController())
+        }
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(LuaProtocolJson)
+            }
+        }
+
+        val response = client.post("/v1/screens/dashboard") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(
+                LuaScreenRequest(
+                    screenId = LuaScreenId("dashboard"),
+                    clientCapabilities = setOf(LuaCapability(name = "", version = 0)),
+                ),
+            )
+        }.body<LuaScreenResponse>()
+
+        val failure = assertIs<LuaScreenResponse.Failure>(response)
+        assertEquals(LuaErrorCode.INVALID_REQUEST, failure.error.code)
     }
 }
