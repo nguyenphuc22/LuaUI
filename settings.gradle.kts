@@ -18,6 +18,7 @@ rootProject.name = "luaui"
 
 include(
     ":luaui-core",
+    ":luaui-runtime",
     ":luaui-annotations",
     ":luaui-ksp",
     ":luaui-compose",

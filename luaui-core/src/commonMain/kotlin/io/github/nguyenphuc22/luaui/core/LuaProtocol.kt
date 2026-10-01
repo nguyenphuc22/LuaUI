@@ -22,16 +22,26 @@ object LuaCapabilities {
     val foundation: Set<LuaCapability> = setOf(column, text, button, submit)
 
     fun requiredBy(node: LuaNode): Set<LuaCapability> = buildSet {
-        when (node) {
-            is LuaColumnNode -> {
-                add(column)
-                node.children.forEach { child -> addAll(requiredBy(child)) }
-            }
+        val visitedIds = mutableSetOf<LuaNodeId>()
+        val pending = mutableListOf(node)
 
-            is LuaTextNode -> add(text)
-            is LuaButtonNode -> {
-                add(button)
-                addAll(requiredBy(node.onClick))
+        while (pending.isNotEmpty()) {
+            val current = pending.removeAt(pending.lastIndex)
+            // A malformed in-memory tree can be cyclic through a MutableList. Validation will
+            // report the duplicate ID; capability discovery must remain safe before that point.
+            if (!visitedIds.add(current.id)) continue
+
+            when (current) {
+                is LuaColumnNode -> {
+                    add(column)
+                    current.children.asReversed().forEach { child -> pending += child }
+                }
+
+                is LuaTextNode -> add(text)
+                is LuaButtonNode -> {
+                    add(button)
+                    addAll(requiredBy(current.onClick))
+                }
             }
         }
     }

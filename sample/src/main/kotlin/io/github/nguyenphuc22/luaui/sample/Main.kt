@@ -17,10 +17,14 @@ import androidx.compose.ui.window.application
 import io.github.nguyenphuc22.luaui.compose.LuaScreenHost
 import io.github.nguyenphuc22.luaui.core.LuaActionResponse
 import io.github.nguyenphuc22.luaui.core.LuaCapabilities
+import io.github.nguyenphuc22.luaui.core.LuaError
+import io.github.nguyenphuc22.luaui.core.LuaErrorCode
 import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenRequest
 import io.github.nguyenphuc22.luaui.core.LuaScreenResponse
 import io.github.nguyenphuc22.luaui.material3.generated.Material3GeneratedRendererDispatcher
+import io.github.nguyenphuc22.luaui.runtime.LuaNodeStore
+import io.github.nguyenphuc22.luaui.runtime.LuaNodeStoreCreation
 import io.github.nguyenphuc22.luaui.transport.HttpLuaTransport
 import kotlinx.coroutines.launch
 
@@ -30,15 +34,15 @@ fun main() {
     application {
         val transport = remember { HttpLuaTransport("http://127.0.0.1:8080") }
         val coroutineScope = rememberCoroutineScope()
-        var response by remember { mutableStateOf<LuaScreenResponse?>(null) }
+        var uiState by remember { mutableStateOf<DashboardUiState>(DashboardUiState.Loading) }
 
         LaunchedEffect(Unit) {
-            response = transport.loadScreen(
+            uiState = transport.loadScreen(
                 LuaScreenRequest(
                     screenId = LuaScreenId("dashboard"),
                     clientCapabilities = LuaCapabilities.foundation,
                 ),
-            )
+            ).toDashboardUiState()
         }
 
         Window(
@@ -51,34 +55,30 @@ fun main() {
         ) {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    when (val current = response) {
-                        null -> CircularProgressIndicator()
-                        is LuaScreenResponse.Screen -> LuaScreenHost(
-                            screen = current.screen,
+                    when (val current = uiState) {
+                        DashboardUiState.Loading -> CircularProgressIndicator()
+                        is DashboardUiState.Ready -> LuaScreenHost(
+                            nodeStore = current.nodeStore,
                             dispatcher = Material3GeneratedRendererDispatcher,
-                            clientCapabilities = LuaCapabilities.foundation,
                             onAction = { nodeId, action ->
                                 coroutineScope.launch {
-                                    response = transport.dispatchAction(
+                                    uiState = transport.dispatchAction(
                                         request = io.github.nguyenphuc22.luaui.core.LuaActionRequest(
-                                            screenId = current.screen.id,
+                                            screenId = current.nodeStore.screenId,
                                             sourceNodeId = nodeId,
                                             actionId = action.actionId,
                                             clientCapabilities = LuaCapabilities.foundation,
                                         ),
-                                    ).asScreenResponse()
+                                    ).asScreenResponse().toDashboardUiState()
                                 }
-                            },
-                            errorContent = { issues ->
-                                Text("LuaUI validation failed: ${issues.firstOrNull()?.message ?: "unknown error"}")
                             },
                         )
 
-                        is LuaScreenResponse.Incompatible -> Text(
+                        is DashboardUiState.Incompatible -> Text(
                             "Client is missing: ${current.missingCapabilities.joinToString { capability -> capability.name }}",
                         )
 
-                        is LuaScreenResponse.Failure -> Text(current.error.message)
+                        is DashboardUiState.Failure -> Text(current.error.message)
                     }
                 }
             }
@@ -89,4 +89,40 @@ fun main() {
 private fun LuaActionResponse.asScreenResponse(): LuaScreenResponse = when (this) {
     is LuaActionResponse.Screen -> LuaScreenResponse.Screen(screen)
     is LuaActionResponse.Failure -> LuaScreenResponse.Failure(error)
+}
+
+private sealed interface DashboardUiState {
+    data object Loading : DashboardUiState
+
+    data class Ready(
+        val nodeStore: LuaNodeStore,
+    ) : DashboardUiState
+
+    data class Incompatible(
+        val missingCapabilities: Set<io.github.nguyenphuc22.luaui.core.LuaCapability>,
+    ) : DashboardUiState
+
+    data class Failure(
+        val error: LuaError,
+    ) : DashboardUiState
+}
+
+private fun LuaScreenResponse.toDashboardUiState(): DashboardUiState = when (this) {
+    is LuaScreenResponse.Screen -> when (
+        val creation = LuaNodeStore.create(
+            screen = screen,
+            clientCapabilities = LuaCapabilities.foundation,
+        )
+    ) {
+        is LuaNodeStoreCreation.Ready -> DashboardUiState.Ready(creation.store)
+        is LuaNodeStoreCreation.Invalid -> DashboardUiState.Failure(
+            LuaError(
+                code = LuaErrorCode.INVALID_SCREEN,
+                message = "The client rejected an invalid LuaUI screen.",
+            ),
+        )
+    }
+
+    is LuaScreenResponse.Incompatible -> DashboardUiState.Incompatible(missingCapabilities)
+    is LuaScreenResponse.Failure -> DashboardUiState.Failure(error)
 }

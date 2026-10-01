@@ -12,6 +12,8 @@ import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenRequest
 import io.github.nguyenphuc22.luaui.core.LuaScreenResponse
 import io.github.nguyenphuc22.luaui.core.LuaTextNode
+import io.github.nguyenphuc22.luaui.runtime.LuaNodeStore
+import io.github.nguyenphuc22.luaui.runtime.LuaNodeStoreCreation
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.header
@@ -24,6 +26,7 @@ import io.ktor.server.testing.testApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotSame
 
 class DashboardHttpIntegrationTest {
     @Test
@@ -48,6 +51,9 @@ class DashboardHttpIntegrationTest {
         }.body<LuaScreenResponse>()
 
         val initialScreen = assertIs<LuaScreenResponse.Screen>(initialResponse).screen
+        val initialStore = assertIs<LuaNodeStoreCreation.Ready>(
+            LuaNodeStore.create(initialScreen, LuaCapabilities.foundation),
+        ).store
         val refreshNode = assertIs<LuaColumnNode>(initialScreen.root).children.last()
 
         val refreshedResponse = client.post("/v1/actions") {
@@ -63,12 +69,20 @@ class DashboardHttpIntegrationTest {
         }.body<LuaActionResponse>()
 
         val refreshedScreen = assertIs<LuaActionResponse.Screen>(refreshedResponse).screen
+        val refreshedStore = assertIs<LuaNodeStoreCreation.Ready>(
+            LuaNodeStore.create(refreshedScreen, LuaCapabilities.foundation),
+        ).store
         val refreshedPrice = assertIs<LuaTextNode>(
             assertIs<LuaColumnNode>(refreshedScreen.root).children[1],
         )
 
         assertEquals("1501000 ₫", refreshedPrice.text)
         assertEquals(LuaNodeId("dashboard.refresh"), refreshNode.id)
+        assertNotSame(initialStore, refreshedStore)
+        assertEquals(
+            LuaNodeId("dashboard.refresh"),
+            refreshedStore.find(LuaNodeId("dashboard.refresh"))?.node?.id,
+        )
     }
 
     @Test

@@ -10,6 +10,7 @@ kotlin {
 
 dependencies {
     implementation(project(":luaui-compose"))
+    implementation(project(":luaui-runtime"))
     implementation(project(":luaui-material3"))
     implementation(project(":luaui-server"))
     implementation(project(":luaui-transport"))

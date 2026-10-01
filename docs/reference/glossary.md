@@ -12,7 +12,7 @@
 | **Stable ID** | ID ổn định của node, dùng làm key xuyên state/patch/test/analytics; Foundation 0.1 yêu cầu unique trong screen, còn scope/generator rộng hơn sẽ được đặc tả trước public API. |
 | **LuaTree Builder** | Thành phần Server SDK tạo typed tree từ DSL và business data. |
 | **Lua Runtime** | Client runtime xử lý definition, validation, state boundary, action, patch, navigation và render dispatch. |
-| **NodeStore** | Index `NodeId → LuaNode` cùng quan hệ tree để patch/lookup hiệu quả. |
+| **NodeStore** | Snapshot/index screen-scoped bất biến từ `NodeId → LuaNode` cùng quan hệ tree để lookup hiệu quả và chuẩn bị cho patch. |
 | **LuaAction** | Mô tả hành động declarative do user interaction hoặc runtime dispatch. |
 | **Expression** | AST typed/allowlisted cho logic UI động, không phải executable code. |
 | **Patch** | Thay đổi tăng dần vào definition thay vì tải lại toàn bộ screen. |
