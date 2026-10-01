@@ -61,6 +61,8 @@ Tree giữ quan hệ cấu trúc; `NodeStore` giữ index `NodeId → LuaNode`. 
 
 Runtime 0.2 Phase 1 hiện thực `LuaNodeStore` như snapshot/index bất biến, screen-scoped sau validation. Nó giữ parent relation và child order, nhưng chưa thêm patch/revision hay local StateStore; xem [NodeStore 0.2](../specs/runtime-node-store-0.2.md).
 
+Runtime 0.2 Phase 2 thêm `LuaScreenStore`: một state machine bất biến cho `Loading`, `Ready`, `Incompatible` hoặc `Failure`. Host sở hữu Compose/observable state và nhận successor hoàn chỉnh sau mỗi typed response; Runtime không sở hữu HTTP, coroutine hay policy thứ tự response. Xem [ScreenStore 0.2](../specs/runtime-screen-store-0.2.md) cho contract và các ranh giới còn hoãn.
+
 ```text
 Patch → Patch validator → NodeStore lookup → Tree reconciliation
       → invalidate relevant state → Compose recomposition

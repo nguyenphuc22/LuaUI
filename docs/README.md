@@ -27,7 +27,8 @@ docs/
 ├── specs/
 │   ├── protocol-0.1.md            # Contract đóng cho Foundation 0.1
 │   ├── protobuf-0.1.md            # Proto3 canonical compatibility spike
-│   └── runtime-node-store-0.2.md  # Runtime snapshot/index Phase 1
+│   ├── runtime-node-store-0.2.md  # Runtime snapshot/index Phase 1
+│   └── runtime-screen-store-0.2.md # Runtime lifecycle snapshot Phase 2
 ├── guides/
 │   └── foundation-0.1.md          # Cách chạy và phạm vi vertical slice
 ├── reference/

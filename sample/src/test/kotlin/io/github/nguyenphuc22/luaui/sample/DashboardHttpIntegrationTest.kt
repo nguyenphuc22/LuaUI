@@ -5,15 +5,15 @@ import io.github.nguyenphuc22.luaui.core.LuaActionResponse
 import io.github.nguyenphuc22.luaui.core.LuaCapability
 import io.github.nguyenphuc22.luaui.core.LuaErrorCode
 import io.github.nguyenphuc22.luaui.core.LuaCapabilities
-import io.github.nguyenphuc22.luaui.core.LuaColumnNode
+import io.github.nguyenphuc22.luaui.core.LuaButtonNode
 import io.github.nguyenphuc22.luaui.core.LuaNodeId
 import io.github.nguyenphuc22.luaui.core.LuaProtocolJson
 import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenRequest
 import io.github.nguyenphuc22.luaui.core.LuaScreenResponse
 import io.github.nguyenphuc22.luaui.core.LuaTextNode
-import io.github.nguyenphuc22.luaui.runtime.LuaNodeStore
-import io.github.nguyenphuc22.luaui.runtime.LuaNodeStoreCreation
+import io.github.nguyenphuc22.luaui.runtime.LuaScreenStore
+import io.github.nguyenphuc22.luaui.runtime.LuaScreenStoreState
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.header
@@ -50,35 +50,40 @@ class DashboardHttpIntegrationTest {
             )
         }.body<LuaScreenResponse>()
 
-        val initialScreen = assertIs<LuaScreenResponse.Screen>(initialResponse).screen
-        val initialStore = assertIs<LuaNodeStoreCreation.Ready>(
-            LuaNodeStore.create(initialScreen, LuaCapabilities.foundation),
-        ).store
-        val refreshNode = assertIs<LuaColumnNode>(initialScreen.root).children.last()
+        val screenStore = LuaScreenStore.loading(
+            screenId = LuaScreenId("dashboard"),
+            clientCapabilities = LuaCapabilities.foundation,
+        )
+        val initialState = screenStore.accept(initialResponse)
+        val initialStore = assertIs<LuaScreenStoreState.Ready>(initialState.state).nodeStore
+        val refreshNode = initialStore.find(LuaNodeId("dashboard.refresh"))?.node
 
         val refreshedResponse = client.post("/v1/actions") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             setBody(
                 LuaActionRequest(
-                    screenId = initialScreen.id,
-                    sourceNodeId = refreshNode.id,
+                    screenId = initialStore.screenId,
+                    sourceNodeId = assertIs<LuaButtonNode>(refreshNode).id,
                     actionId = io.github.nguyenphuc22.luaui.core.LuaActionId("dashboard.refresh"),
                     clientCapabilities = LuaCapabilities.foundation,
                 ),
             )
         }.body<LuaActionResponse>()
 
-        val refreshedScreen = assertIs<LuaActionResponse.Screen>(refreshedResponse).screen
-        val refreshedStore = assertIs<LuaNodeStoreCreation.Ready>(
-            LuaNodeStore.create(refreshedScreen, LuaCapabilities.foundation),
-        ).store
+        val refreshedState = initialState.accept(refreshedResponse)
+        val refreshedStore = assertIs<LuaScreenStoreState.Ready>(refreshedState.state).nodeStore
         val refreshedPrice = assertIs<LuaTextNode>(
-            assertIs<LuaColumnNode>(refreshedScreen.root).children[1],
+            refreshedStore.find(LuaNodeId("dashboard.price"))?.node,
         )
 
         assertEquals("1501000 ₫", refreshedPrice.text)
-        assertEquals(LuaNodeId("dashboard.refresh"), refreshNode.id)
+        assertEquals(LuaNodeId("dashboard.refresh"), refreshNode?.id)
+        assertNotSame(initialState, refreshedState)
         assertNotSame(initialStore, refreshedStore)
+        assertEquals(
+            "1500000 ₫",
+            assertIs<LuaTextNode>(initialStore.find(LuaNodeId("dashboard.price"))?.node).text,
+        )
         assertEquals(
             LuaNodeId("dashboard.refresh"),
             refreshedStore.find(LuaNodeId("dashboard.refresh"))?.node?.id,

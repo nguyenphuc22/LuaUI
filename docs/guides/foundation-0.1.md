@@ -29,7 +29,7 @@ Lệnh thứ hai tự khởi động Ktor server cục bộ tại `127.0.0.1:808
 
 ## Những gì chưa có
 
-Đây không phải bản demo của toàn bộ Blueprint. NodeStore snapshot/index bắt đầu ở Runtime 0.2, nhưng Foundation 0.1 vẫn chưa bao gồm patch, custom component, input/local state, expression, navigation, gRPC, WebSocket, offline/cache, Android/iOS sample, persistence, observability hay production security policy.
+Đây không phải bản demo của toàn bộ Blueprint. Runtime 0.2 hiện thêm NodeStore snapshot/index và ScreenStore lifecycle cho full-screen response, nhưng Foundation 0.1 vẫn chưa bao gồm patch, custom component, input/local state, expression, navigation, gRPC, WebSocket, offline/cache, Android/iOS sample, persistence, observability hay production security policy.
 
 Contract cụ thể nằm tại [Protocol 0.1](../specs/protocol-0.1.md). Mọi mở rộng public phải có compatibility story, tests và ADR khi phù hợp.
 
@@ -43,12 +43,12 @@ Schema Proto3 canonical và adapter JVM được kiểm tra riêng, nhưng chưa
 
 Xem [Proto3 0.1](../specs/protobuf-0.1.md) để biết nguồn schema, ranh giới platform và policy evolution.
 
-## Runtime NodeStore Phase 1
+## Runtime NodeStore Phase 1 và ScreenStore Phase 2
 
-Runtime 0.2 có một NodeStore KMP-safe để tạo snapshot/index sau validation. Nó chưa thay đổi HTTP JSON hay thêm patch:
+Runtime 0.2 có NodeStore KMP-safe để tạo snapshot/index sau validation và ScreenStore bất biến để biến typed full-screen/action response thành state `Loading`, `Ready`, `Incompatible` hoặc `Failure`. Sample vẫn dùng HTTP JSON; runtime không thêm patch hay local input state:
 
 ```bash
 ./gradlew :luaui-runtime:allTests
 ```
 
-Xem [Runtime NodeStore 0.2](../specs/runtime-node-store-0.2.md) để biết scope và ranh giới evolution.
+Xem [Runtime NodeStore 0.2](../specs/runtime-node-store-0.2.md) và [Runtime ScreenStore 0.2](../specs/runtime-screen-store-0.2.md) để biết scope và ranh giới evolution.
