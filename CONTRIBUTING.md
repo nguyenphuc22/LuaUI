@@ -1,6 +1,6 @@
 # Đóng góp cho LuaUI
 
-Cảm ơn bạn đã muốn tham gia xây dựng LuaUI. Repository hiện ở giai đoạn **architecture-first**: chưa có mã nguồn hoặc build system. Đóng góp có giá trị nhất lúc này là làm rõ contract, thu hẹp MVP và biến các quyết định đã chốt thành đặc tả có thể kiểm thử.
+Cảm ơn bạn đã muốn tham gia xây dựng LuaUI. Repository đang ở **Foundation 0.1**: có Gradle build, typed core contract, KSP dispatcher prototype và Compose Desktop reference sample, nhưng chưa có public API/wire contract ổn định hoặc production support. Đóng góp có giá trị nhất là giữ vertical slice nhỏ, có kiểm thử và không làm architecture đích biến thành phạm vi 0.1.
 
 ## Trước khi bắt đầu
 
@@ -30,9 +30,10 @@ Tạo hoặc cập nhật một ADR trong `docs/adr/` nếu thay đổi:
 
 Một ADR cần nêu bối cảnh, quyết định, hệ quả và liên kết đến tài liệu bị ảnh hưởng. Không thay đổi ADR đã được chấp nhận để viết lại lịch sử; tạo ADR thay thế và đánh dấu ADR cũ là superseded khi cần.
 
-## Chuẩn pull request khi mã nguồn xuất hiện
+## Chuẩn pull request
 
 - Giới hạn thay đổi vào một mục tiêu có thể review.
+- Chạy `./gradlew check` trước khi mở PR; workflow **Verify** phải đạt trước khi merge.
 - Cập nhật docs khi public API, wire contract, metric, feature status hoặc cách sử dụng thay đổi.
 - Thêm test tương ứng: unit cho logic, integration cho ranh giới client–server, compatibility cho evolution, và fault test cho payload lỗi.
 - Không tuyên bố benchmark hoặc production support nếu chưa có dữ liệu và tiêu chí được công bố.
@@ -46,4 +47,4 @@ Một ADR cần nêu bối cảnh, quyết định, hệ quả và liên kết �
 - `docs/reference/`: thuật ngữ và thông tin tra cứu.
 - `docs/roadmap.md`: thứ tự thực hiện, không phải danh sách tính năng đã phát hành.
 
-Viết rõ trạng thái của từng khả năng: **đã chốt về kiến trúc**, **MVP**, **planned**, **open**, **experimental** hoặc **đã phát hành**. Repository hiện tại chỉ có tài liệu: nó ghi nhận kiến trúc Accepted, delivery Planned và câu hỏi Open; chưa có implementation đã phát hành.
+Viết rõ trạng thái của từng khả năng: **đã chốt về kiến trúc**, **MVP**, **in progress**, **planned**, **open**, **experimental** hoặc **đã phát hành**. Repository hiện có Foundation 0.1 in progress cùng kiến trúc Accepted, delivery Planned và câu hỏi Open; chưa có implementation đã phát hành.

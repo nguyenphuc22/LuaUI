@@ -25,7 +25,7 @@ LuaScreen
 
 ### Stable node ID
 
-Mỗi node **BẮT BUỘC** có stable ID. ID phải tiếp tục ổn định khi node còn cùng ý nghĩa nghiệp vụ; không được dùng vị trí trong tree làm ID. Identity policy phải cho phép runtime resolve node không mơ hồ trong screen hiện tại.
+Mỗi node **BẮT BUỘC** có stable ID. ID phải tiếp tục ổn định khi node còn cùng ý nghĩa nghiệp vụ; không được dùng vị trí trong tree làm ID. Identity policy phải cho phép runtime resolve node không mơ hồ trong screen hiện tại. Foundation 0.1 chốt ID unique trong một screen; policy cho các version sau vẫn có thể mở rộng có chủ đích.
 
 ```text
 home
@@ -35,7 +35,7 @@ weight.938
 summary.total
 ```
 
-Stable ID là key chung cho NodeStore, patch, state reconciliation, lazy key, animation, analytics, Inspector và fixture test. Quy tắc sinh/đổi tên ID, scope/uniqueness, phạm vi session và migration vẫn là [Open](open-questions.md#stable-id--patch).
+Stable ID là key chung cho NodeStore, patch, state reconciliation, lazy key, animation, analytics, Inspector và fixture test. Quy tắc sinh/đổi tên ID, scope ngoài một screen, phạm vi session và migration vẫn là [Open](open-questions.md#stable-id--patch). Xem quy tắc 0.1 tại [Protocol 0.1](../specs/protocol-0.1.md).
 
 ## Schema và serialization
 

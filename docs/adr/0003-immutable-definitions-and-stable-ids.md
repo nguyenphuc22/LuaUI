@@ -10,7 +10,7 @@ SDUI phải xử lý full screen, patch, local input và rendering incremental m
 
 ## Quyết định
 
-LuaUI screen/tree là immutable UI definition. Server state và local UI state có lifecycle riêng. Mỗi node có stable ID; identity policy phải cho phép NodeStore resolve node không mơ hồ trong screen hiện tại. ID được dùng xuyên patch, state reconciliation, analytics, animation, lazy key, Inspector và test. Scope/uniqueness và generator chính xác cần spec trước public API.
+LuaUI screen/tree là immutable UI definition. Server state và local UI state có lifecycle riêng. Mỗi node có stable ID; identity policy phải cho phép NodeStore resolve node không mơ hồ trong screen hiện tại. ID được dùng xuyên patch, state reconciliation, analytics, animation, lazy key, Inspector và test. Foundation 0.1 chốt uniqueness trong screen; generator, cross-screen scope và migration cần spec trước public API.
 
 NodeStore giữ index `NodeId → LuaNode` cùng quan hệ cấu trúc tree để patch lookup hiệu quả. Local input/focus/scroll/gesture/animation không round-trip theo từng thay đổi.
 

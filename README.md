@@ -1,11 +1,13 @@
 # LuaUI
 
+[![Verify](https://github.com/nguyenphuc22/LuaUI/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/nguyenphuc22/LuaUI/actions/workflows/verify.yml)
+
 > **A type-safe, full-stack Server-Driven UI framework for Kotlin Multiplatform and Compose Multiplatform.**
 > *Weave dynamic interfaces across platforms.*
 
 LuaUI giúp backend mô tả **cái gì** cần hiển thị, còn ứng dụng khách quyết định **hiển thị như thế nào** bằng UI native của từng nền tảng. Mục tiêu là thay đổi cấu trúc, nội dung và hành vi khai báo của màn hình mà không phải phát hành lại ứng dụng, nhưng chỉ trong giới hạn capability mà client đã cài đặt.
 
-> **Trạng thái hiện tại — Architecture-first.** Repository này đang lưu Architecture Blueprint v1 và chưa có mã nguồn, artefact, hay hướng dẫn cài đặt để sử dụng trong production. Những module và khả năng nêu dưới đây là mục tiêu kiến trúc, không phải cam kết tính năng đã phát hành.
+> **Trạng thái hiện tại — Foundation 0.1 đang phát triển.** Nhánh `dev` có một vertical slice Compose Desktop chạy được và đã được kiểm thử. Đây vẫn là `0.1.0-SNAPSHOT`: chưa có API/wire contract ổn định, artefact phát hành hay cam kết production support.
 
 ## Tại sao LuaUI?
 
@@ -45,19 +47,42 @@ LuaUI hướng tới Android, iOS và Desktop qua Kotlin Multiplatform + Compose
 
 LuaUI **không** là WebView, HTML renderer, JavaScript/Kotlin scripting runtime, remote-code-execution platform, backend tổng quát, database framework, networking framework thay thế hay Compose replacement.
 
-## Golden path dự kiến
+## Golden path
 
-| Phần | Lựa chọn được ưu tiên trong tài liệu và sample dự kiến |
+| Phần | Lựa chọn ưu tiên |
 | --- | --- |
 | Server | Kotlin, Ktor, LuaUI Server SDK |
-| Contract | Protobuf |
-| Kết nối | gRPC hoặc HTTP; WebSocket cho realtime |
+| Contract | Protobuf là hướng kiến trúc đích; 0.1 dùng typed JSON reference có kiểm thử |
+| Kết nối | HTTP/Ktor trong sample Desktop; gRPC và WebSocket là các bước sau |
 | Client | Kotlin Multiplatform, LuaUI Runtime, KSP, Compose Multiplatform |
 | Giao diện | Material 3 là mặc định, design-system adapter là first-class |
 | Lưu trữ | Cache memory/Okio; SQLDelight là tùy chọn |
 | Quan sát | Correlation IDs; OpenTelemetry/Kermit adapter là tùy chọn |
 
 Đây là đường mặc định, không phải khóa chặt framework vào Ktor, gRPC, Material 3 hay một backend cụ thể.
+
+## Foundation 0.1 hiện có
+
+Vertical slice đầu tiên hiện chứng minh:
+
+```text
+Server DSL → validated LuaScreen → HTTP JSON → decode + validate
+           → KSP-generated Material 3 dispatcher → Compose Desktop
+           → Submit → full replacement screen
+```
+
+Phạm vi cố ý hẹp: `Column`, `Text`, `Button`, `Submit`, exact capability `@1`, stable node ID, error response typed và full-screen replacement. Patch, custom component, TextField, expression, navigation, WebSocket/gRPC và offline chưa được hiện thực.
+
+## Chạy Foundation 0.1
+
+Yêu cầu JDK 21 trở lên. Gradle Wrapper tự quản lý phiên bản Gradle phù hợp.
+
+```bash
+./gradlew check
+./gradlew :sample:run
+```
+
+Sample tự chạy một Ktor server cục bộ và mở Compose Desktop. Bấm **Refresh** để kiểm chứng action round-trip và full-screen replacement. Xem [hướng dẫn Foundation 0.1](docs/guides/foundation-0.1.md) để biết phạm vi và tiêu chí kiểm thử.
 
 ## Lộ trình triển khai
 
@@ -68,7 +93,7 @@ Server DSL → LuaNode → Serialize → Transport → Decode
           → KSP dispatcher → Compose → LuaAction → Server
 ```
 
-MVP dự kiến có tám module: `luaui-core`, `luaui-compose`, `luaui-material3`, `luaui-annotations`, `luaui-ksp`, `luaui-transport`, `luaui-server` và `sample`. NodeStore, patch, WebSocket, gRPC và offline persistence chỉ được mở rộng sau khi vertical slice này hoạt động.
+MVP gồm tám module: `luaui-core`, `luaui-compose`, `luaui-material3`, `luaui-annotations`, `luaui-ksp`, `luaui-transport`, `luaui-server` và `sample`. NodeStore, patch, WebSocket, gRPC và offline persistence chỉ được mở rộng sau khi vertical slice này hoạt động.
 
 Xem chi tiết tại [lộ trình](docs/roadmap.md).
 
@@ -81,6 +106,8 @@ Xem chi tiết tại [lộ trình](docs/roadmap.md).
 | Hiểu runtime, render, state, action, patch và offline | [Runtime & rendering](docs/architecture/runtime.md) |
 | Hiểu design system, server SDK và transport | [Nền tảng & tích hợp](docs/architecture/platform.md) |
 | Hiểu bảo mật, độ tin cậy, observability, hiệu năng và test | [Chất lượng & vận hành](docs/architecture/quality.md) |
+| Chạy hoặc review vertical slice hiện tại | [Foundation 0.1](docs/guides/foundation-0.1.md) |
+| Xem contract thực thi hiện tại | [Protocol 0.1](docs/specs/protocol-0.1.md) |
 | Xem các quyết định kiến trúc bền vững | [Architecture Decision Records](docs/adr/README.md) |
 | Xem thuật ngữ chuẩn | [Glossary](docs/reference/glossary.md) |
 | Bắt đầu đóng góp | [CONTRIBUTING.md](CONTRIBUTING.md) |

@@ -20,5 +20,6 @@ ADR ghi lại những trade-off kiến trúc có tuổi thọ dài. Chúng bổ 
 | [0005](0005-transport-and-design-system-agnostic.md) | Contract độc lập transport và design system | Accepted |
 | [0006](0006-versioning-and-capability-negotiation.md) | Evolution đa lớp qua version riêng và capability negotiation | Accepted |
 | [0007](0007-mvp-vertical-slice-before-module-expansion.md) | Chứng minh vertical slice trước khi mở rộng module landscape | Accepted |
+| [0008](0008-foundation-0-1-reference-contract.md) | Dựng reference contract đóng cho Foundation 0.1 | Accepted |
 
 Xem [hướng dẫn đóng góp](../../CONTRIBUTING.md) để biết khi nào một đề xuất cần ADR.
