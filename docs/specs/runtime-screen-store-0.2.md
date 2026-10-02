@@ -1,8 +1,8 @@
 # LuaUI Runtime 0.2 — ScreenStore Phase 2
 
-> **Status:** In progress
+> **Status:** Implemented, experimental Runtime 0.2 API
 >
-> **Scope:** Lifecycle snapshot bất biến cho một full-screen response. Đây không phải local UI StateStore, patch engine, action engine hay public/stable API.
+> **Scope:** Lifecycle snapshot bất biến cho một full-screen response. Đây không phải local UI StateStore implementation, patch engine, action engine hay public/stable API.
 
 ## Mục tiêu
 
@@ -28,7 +28,7 @@ typed response → LuaScreenStore.accept
 
 ## Những điều cố ý chưa làm
 
-Không có local input/focus/scroll state, patch/revision/reconciliation, response ordering hoặc stale-response discard, navigation, cache/offline, action retry/cancellation/progress/idempotency, `StateFlow`/Compose-state ownership hay renderer lỗi Compose. Host serialize event theo nhu cầu ứng dụng; protocol chưa có correlation/revision để runtime quyết định an toàn response nào thắng.
+Không có local input/focus/scroll state implementation, patch/revision/reconciliation, response ordering hoặc stale-response discard, navigation, cache/offline, action retry/cancellation/progress/idempotency, `StateFlow`/Compose-state ownership hay renderer lỗi Compose. Local state ownership/reconciliation cho full replacement đã được chốt tại [LocalStateStore 0.2](runtime-local-state-store-0.2.md), nhưng store implementation vẫn intentionally deferred. Host serialize event theo nhu cầu ứng dụng; protocol chưa có correlation/revision để runtime quyết định an toàn response nào thắng.
 
 Patch ordering, local-edit conflict và action lifecycle tiếp tục là [câu hỏi mở](../architecture/open-questions.md#stable-id--patch) và [câu hỏi về action](../architecture/open-questions.md#expressions--actions).
 
@@ -42,4 +42,4 @@ Patch ordering, local-edit conflict và action lifecycle tiếp tục là [câu 
 
 ## Evolution boundary
 
-Khi bổ sung local `StateStore`, patch hoặc asynchronous action lifecycle, cần spec/ADR riêng cho ownership, cancellation, ordering, revision, atomicity và conflict policy. Không dùng ScreenStore Phase 2 để ngầm định một trong các policy đó.
+Khi hiện thực local `StateStore`, thêm patch hoặc asynchronous action lifecycle, cần spec/ADR riêng cho typed slot API, cancellation, ordering, revision, atomicity và conflict policy. Không dùng ScreenStore Phase 2 để ngầm định một trong các policy đó.

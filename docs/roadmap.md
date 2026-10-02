@@ -1,6 +1,6 @@
 # Lộ trình LuaUI
 
-> **Status:** Foundation 0.1 reference baseline và Runtime 0.2 NodeStore Phase 1 đã hiện thực; ScreenStore Phase 2 đang triển khai; các milestone sau vẫn Planned
+> **Status:** Foundation 0.1 reference baseline, Runtime 0.2 NodeStore Phase 1 và ScreenStore Phase 2 đã hiện thực; LocalStateStore Phase 3 đã chốt kiến trúc, implementation vẫn Planned
 >
 > Đây là thứ tự hiện thực theo Architecture Blueprint v1, không phải cam kết ngày phát hành hoặc danh sách tính năng đã sẵn sàng.
 
@@ -32,8 +32,8 @@ Contract thực thi đầu tiên được chốt tại [Protocol 0.1](specs/prot
 ## 0.2 — Runtime
 
 - **Phase 1 đã hiện thực:** NodeStore bất biến, screen-scoped và full-screen snapshot/index; xem [NodeStore 0.2](specs/runtime-node-store-0.2.md).
-- **Phase 2 đang triển khai:** ScreenStore bất biến cho loading/ready/incompatible/failure và full-screen replacement; xem [ScreenStore 0.2](specs/runtime-screen-store-0.2.md).
-- StateStore cho local UI state;
+- **Phase 2 đã hiện thực:** ScreenStore bất biến cho loading/ready/incompatible/failure và full-screen replacement; xem [ScreenStore 0.2](specs/runtime-screen-store-0.2.md).
+- **Phase 3 đã chốt kiến trúc:** LocalStateStore screen-session scoped cho draft/focus/scroll; implementation đợi stateful control contract; xem [LocalStateStore 0.2](specs/runtime-local-state-store-0.2.md).
 - navigation, expressions và design tokens;
 - cache + error boundary;
 - Inspector cơ bản;
