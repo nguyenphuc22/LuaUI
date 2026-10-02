@@ -14,7 +14,8 @@
 | **Lua Runtime** | Client runtime xử lý definition, validation, state boundary, action, patch, navigation và render dispatch. |
 | **NodeStore** | Snapshot/index screen-scoped bất biến từ `NodeId → LuaNode` cùng quan hệ tree để lookup hiệu quả và chuẩn bị cho patch. |
 | **ScreenStore** | State machine screen-scoped bất biến biến typed response thành `Loading`, `Ready`, `Incompatible` hoặc `Failure`; host sở hữu observable UI state và thay một successor hoàn chỉnh. |
-| **LocalStateStore** | State store tương lai, memory-only và scoped theo screen session, giữ typed local entries qua replacement tương thích; không chứa Compose controller, server state hay persistence mặc định. |
+| **LocalStateStore** | State store memory-only, scoped theo screen session, giữ typed local entries qua replacement tương thích; vertical slice hiện có `TextField` draft, không chứa Compose controller, server state hay persistence mặc định. |
+| **LuaScreenSession** | Một successor bất biến gồm ScreenStore và LocalStateStore, để host publish definition mới cùng local draft đã reconcile trong một state assignment. |
 | **LuaAction** | Mô tả hành động declarative do user interaction hoặc runtime dispatch. |
 | **Expression** | AST typed/allowlisted cho logic UI động, không phải executable code. |
 | **Patch** | Thay đổi tăng dần vào definition thay vì tải lại toàn bộ screen. |

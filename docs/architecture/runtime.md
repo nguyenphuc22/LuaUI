@@ -55,13 +55,13 @@ Ví dụ: người dùng gõ `1 → 12 → 123 → 1234` vào `TextField` thì t
 
 ADR-0010 chốt ownership cho full-screen replacement: local state thuộc client, screen-session scoped và chỉ retain khi stable identity lẫn state contract còn tương thích. Draft dirty không bị full response ghi đè ngầm; focus/scroll chỉ restore best-effort ở renderer. Xem [LocalStateStore 0.2](../specs/runtime-local-state-store-0.2.md). Patch conflict, persistence và action acknowledgement vẫn [Open](open-questions.md#offline--local-edits).
 
-Runtime 0.2 Phase 3 hiện chỉ chốt policy, chưa có StateStore implementation hay control stateful. Khi hiện thực, host phải reconcile NodeStore candidate và LocalStateStore candidate trước khi publish một screen-session successor, để Compose không thấy definition mới ghép với local state cũ.
+Runtime 0.2 Phase 3 hiện có vertical slice `TextField`: `LuaLocalStateStore` giữ typed draft, còn `LuaScreenSession` reconcile `LuaNodeStore` candidate và LocalStateStore candidate trước khi host publish một successor. `component.text_field@1` là capability additive; `LuaCapabilities.foundation` không bị mở rộng. Renderer Material 3 chỉ đọc/gửi local draft callback, còn `Submit` vẫn chỉ mang identifier. Xem [LocalStateStore 0.2](../specs/runtime-local-state-store-0.2.md) và [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md).
 
 ## NodeStore và reconciliation
 
 Tree giữ quan hệ cấu trúc; `NodeStore` giữ index `NodeId → LuaNode`. Nhờ stable ID, runtime không cần traverse toàn bộ tree để tìm node cần update.
 
-Runtime 0.2 Phase 1 hiện thực `LuaNodeStore` như snapshot/index bất biến, screen-scoped sau validation. Nó giữ parent relation và child order, nhưng chưa thêm patch/revision hay local StateStore implementation; xem [NodeStore 0.2](../specs/runtime-node-store-0.2.md).
+Runtime 0.2 Phase 1 hiện thực `LuaNodeStore` như snapshot/index bất biến, screen-scoped sau validation. Nó giữ parent relation và child order, nhưng bản thân không sở hữu patch/revision hay local state; [LocalStateStore Phase 3](../specs/runtime-local-state-store-0.2.md) reconcile trên NodeStore candidate. Xem [NodeStore 0.2](../specs/runtime-node-store-0.2.md).
 
 Runtime 0.2 Phase 2 thêm `LuaScreenStore`: một state machine bất biến cho `Loading`, `Ready`, `Incompatible` hoặc `Failure`. Host sở hữu Compose/observable state và nhận successor hoàn chỉnh sau mỗi typed response; Runtime không sở hữu HTTP, coroutine hay policy thứ tự response. Xem [ScreenStore 0.2](../specs/runtime-screen-store-0.2.md) cho contract và các ranh giới còn hoãn.
 

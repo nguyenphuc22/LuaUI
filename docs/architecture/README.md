@@ -71,7 +71,7 @@ luaui-core · luaui-compose · luaui-material3 · luaui-annotations
 luaui-ksp · luaui-transport · luaui-server · sample
 ```
 
-Sau khi vertical slice chứng minh core contract, Runtime 0.2 thêm `luaui-runtime` cho NodeStore/ScreenStore; LocalStateStore hiện mới có policy kiến trúc. Không có dependency bắt buộc kiểu `luaui-all`. Adapter cho gRPC, SQLDelight, OpenTelemetry, analytics hay design system tùy chỉnh được thêm sau khi có consumer và contract tương ứng.
+Sau khi vertical slice chứng minh core contract, Runtime 0.2 thêm `luaui-runtime` cho NodeStore/ScreenStore và một LocalStateStore/TextField vertical slice experimental. Không có dependency bắt buộc kiểu `luaui-all`. Adapter cho gRPC, SQLDelight, OpenTelemetry, analytics hay design system tùy chỉnh được thêm sau khi có consumer và contract tương ứng.
 
 ## Đọc tiếp
 

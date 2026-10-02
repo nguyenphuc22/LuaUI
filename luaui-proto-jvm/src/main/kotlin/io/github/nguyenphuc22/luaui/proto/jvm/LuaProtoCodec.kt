@@ -20,6 +20,7 @@ import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenRequest
 import io.github.nguyenphuc22.luaui.core.LuaScreenResponse
 import io.github.nguyenphuc22.luaui.core.LuaScreenValidationResult
+import io.github.nguyenphuc22.luaui.core.LuaTextFieldNode
 import io.github.nguyenphuc22.luaui.core.LuaTextNode
 import io.github.nguyenphuc22.luaui.proto.v1.Action as ProtoAction
 import io.github.nguyenphuc22.luaui.proto.v1.ActionRequest as ProtoActionRequest
@@ -35,6 +36,7 @@ import io.github.nguyenphuc22.luaui.proto.v1.Screen as ProtoScreen
 import io.github.nguyenphuc22.luaui.proto.v1.ScreenRequest as ProtoScreenRequest
 import io.github.nguyenphuc22.luaui.proto.v1.ScreenResponse as ProtoScreenResponse
 import io.github.nguyenphuc22.luaui.proto.v1.SubmitAction as ProtoSubmitAction
+import io.github.nguyenphuc22.luaui.proto.v1.TextFieldNode as ProtoTextFieldNode
 import io.github.nguyenphuc22.luaui.proto.v1.TextNode as ProtoTextNode
 
 /** Raised when a Proto3 payload cannot be safely represented by the LuaUI core model. */
@@ -140,6 +142,13 @@ fun LuaNode.toProto(): ProtoNode = ProtoNode.newBuilder()
                     .build(),
             )
 
+            is LuaTextFieldNode -> setTextField(
+                ProtoTextFieldNode.newBuilder()
+                    .setLabel(this@toProto.label)
+                    .setInitialValue(this@toProto.initialValue)
+                    .build(),
+            )
+
             is LuaButtonNode -> setButton(
                 ProtoButtonNode.newBuilder()
                     .setLabel(this@toProto.label)
@@ -159,6 +168,12 @@ fun ProtoNode.toLuaNode(): LuaNode = when (getKindCase()) {
     ProtoNode.KindCase.TEXT -> LuaTextNode(
         id = LuaNodeId(getId()),
         text = getText().getText(),
+    )
+
+    ProtoNode.KindCase.TEXT_FIELD -> LuaTextFieldNode(
+        id = LuaNodeId(getId()),
+        label = getTextField().getLabel(),
+        initialValue = getTextField().getInitialValue(),
     )
 
     ProtoNode.KindCase.BUTTON -> {

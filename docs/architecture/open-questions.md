@@ -7,10 +7,10 @@
 ## Stable ID & patch
 
 - Foundation 0.1 chốt ID explicit và unique trong một screen. Sau 0.1, ai sinh ID (Server DSL, domain hay client helper), scope cross-screen/session và lifecycle khi node di chuyển/đổi tên/xóa là gì?
-- Runtime 0.2 Phase 1 đã có NodeStore snapshot/index theo scope một screen, và Phase 2 có ScreenStore full-response lifecycle. Revision, action response ordering, stale-response discard và mutation policy cho patch vẫn chưa được chốt.
+- Runtime 0.2 Phase 1 đã có NodeStore snapshot/index theo scope một screen, Phase 2 có ScreenStore full-response lifecycle, và Phase 3 có TextField draft reconciliation experimental. Revision, action response ordering, stale-response discard và mutation policy cho patch vẫn chưa được chốt.
 - Patch có `revision`/`baseRevision` không? Xử lý duplicate, out-of-order, replay và retry thế nào?
 - `Batch` có atomic không? Partial failure báo thế nào và tree có rollback không?
-- [ADR-0010](../adr/0010-local-ui-state-ownership-and-reconciliation.md) chốt retain/prune local state cho full-screen replacement. Patch conflict với dirty draft/focus/scroll, revision và batch rollback vẫn cần policy riêng.
+- [ADR-0010](../adr/0010-local-ui-state-ownership-and-reconciliation.md) chốt retain/prune local state cho full-screen replacement; [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md) hiện thực policy đó cho draft TextField. Patch conflict với dirty draft/focus/scroll, revision và batch rollback vẫn cần policy riêng.
 
 ## Schema & wire format
 

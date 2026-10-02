@@ -17,6 +17,11 @@ object LuaCapabilities {
     val column = LuaCapability(name = "component.column", version = 1)
     val text = LuaCapability(name = "component.text", version = 1)
     val button = LuaCapability(name = "component.button", version = 1)
+    /**
+     * Experimental, additive control capability. It intentionally is not part of [foundation],
+     * so a Foundation 0.1 client never advertises a renderer it does not ship.
+     */
+    val textField = LuaCapability(name = "component.text_field", version = 1)
     val submit = LuaCapability(name = "action.submit", version = 1)
 
     val foundation: Set<LuaCapability> = setOf(column, text, button, submit)
@@ -38,6 +43,7 @@ object LuaCapabilities {
                 }
 
                 is LuaTextNode -> add(text)
+                is LuaTextFieldNode -> add(textField)
                 is LuaButtonNode -> {
                     add(button)
                     addAll(requiredBy(current.onClick))
@@ -77,6 +83,20 @@ data class LuaColumnNode(
 data class LuaTextNode(
     override val id: LuaNodeId,
     val text: String,
+) : LuaNode
+
+/**
+ * A server-described input definition.
+ *
+ * The current value remains client-owned in the Runtime local-state layer. In particular, this
+ * node carries no mutable draft, acknowledgement, or action-payload field.
+ */
+@Serializable
+@SerialName("text_field")
+data class LuaTextFieldNode(
+    override val id: LuaNodeId,
+    val label: String,
+    val initialValue: String,
 ) : LuaNode
 
 @Serializable

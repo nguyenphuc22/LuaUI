@@ -8,6 +8,8 @@ data class LuaProtocolLimits(
     val maxChildrenPerColumn: Int = 500,
     val maxTextLength: Int = 4_096,
     val maxButtonLabelLength: Int = 256,
+    val maxTextFieldLabelLength: Int = 256,
+    val maxTextFieldInitialValueLength: Int = 4_096,
 )
 
 data class LuaValidationIssue(
@@ -107,6 +109,24 @@ object LuaProtocolValidator {
                             code = "text_length_exceeded",
                             path = "$path.text",
                             message = "Text exceeds the ${limits.maxTextLength}-character limit.",
+                        )
+                    }
+                }
+
+                is LuaTextFieldNode -> {
+                    requiredByTree += LuaCapabilities.textField
+                    if (node.label.length > limits.maxTextFieldLabelLength) {
+                        issues += issue(
+                            code = "text_field_label_length_exceeded",
+                            path = "$path.label",
+                            message = "Text field label exceeds the ${limits.maxTextFieldLabelLength}-character limit.",
+                        )
+                    }
+                    if (node.initialValue.length > limits.maxTextFieldInitialValueLength) {
+                        issues += issue(
+                            code = "text_field_initial_value_length_exceeded",
+                            path = "$path.initialValue",
+                            message = "Text field initial value exceeds the ${limits.maxTextFieldInitialValueLength}-character limit.",
                         )
                     }
                 }

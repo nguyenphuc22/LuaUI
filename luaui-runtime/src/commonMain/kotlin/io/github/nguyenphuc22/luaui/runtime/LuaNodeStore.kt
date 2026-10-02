@@ -11,6 +11,7 @@ import io.github.nguyenphuc22.luaui.core.LuaProtocolValidator
 import io.github.nguyenphuc22.luaui.core.LuaScreen
 import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenValidationResult
+import io.github.nguyenphuc22.luaui.core.LuaTextFieldNode
 import io.github.nguyenphuc22.luaui.core.LuaTextNode
 import io.github.nguyenphuc22.luaui.core.LuaValidationIssue
 
@@ -145,6 +146,12 @@ class LuaNodeStore private constructor(
             is LuaTextNode -> LuaTextNode(
                 id = node.id,
                 text = node.text,
+            )
+
+            is LuaTextFieldNode -> LuaTextFieldNode(
+                id = node.id,
+                label = node.label,
+                initialValue = node.initialValue,
             )
 
             is LuaButtonNode -> LuaButtonNode(

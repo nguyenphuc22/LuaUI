@@ -11,8 +11,9 @@ import io.github.nguyenphuc22.luaui.core.LuaProtocolJson
 import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenRequest
 import io.github.nguyenphuc22.luaui.core.LuaScreenResponse
+import io.github.nguyenphuc22.luaui.core.LuaTextFieldNode
 import io.github.nguyenphuc22.luaui.core.LuaTextNode
-import io.github.nguyenphuc22.luaui.runtime.LuaScreenStore
+import io.github.nguyenphuc22.luaui.runtime.LuaScreenSession
 import io.github.nguyenphuc22.luaui.runtime.LuaScreenStoreState
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -27,10 +28,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotSame
+import kotlin.test.assertTrue
 
 class DashboardHttpIntegrationTest {
     @Test
-    fun `HTTP screen load and submit return a validated full replacement`() = testApplication {
+    fun `HTTP screen load submit and local draft return a validated full replacement`() = testApplication {
         application {
             dashboardModule(DashboardController())
         }
@@ -40,23 +42,28 @@ class DashboardHttpIntegrationTest {
             }
         }
 
+        val clientCapabilities = LuaCapabilities.foundation + LuaCapabilities.textField
         val initialResponse = client.post("/v1/screens/dashboard") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             setBody(
                 LuaScreenRequest(
                     screenId = LuaScreenId("dashboard"),
-                    clientCapabilities = LuaCapabilities.foundation,
+                    clientCapabilities = clientCapabilities,
                 ),
             )
         }.body<LuaScreenResponse>()
 
-        val screenStore = LuaScreenStore.loading(
+        val session = LuaScreenSession.loading(
             screenId = LuaScreenId("dashboard"),
-            clientCapabilities = LuaCapabilities.foundation,
+            clientCapabilities = clientCapabilities,
         )
-        val initialState = screenStore.accept(initialResponse)
-        val initialStore = assertIs<LuaScreenStoreState.Ready>(initialState.state).nodeStore
+        val initialSession = session.accept(initialResponse)
+        val initialStore = assertIs<LuaScreenStoreState.Ready>(initialSession.screenStore.state).nodeStore
         val refreshNode = initialStore.find(LuaNodeId("dashboard.refresh"))?.node
+        val filterNode = assertIs<LuaTextFieldNode>(
+            initialStore.find(LuaNodeId("dashboard.filter"))?.node,
+        )
+        val editedSession = initialSession.updateTextField(filterNode.id, "rice")
 
         val refreshedResponse = client.post("/v1/actions") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
@@ -65,20 +72,25 @@ class DashboardHttpIntegrationTest {
                     screenId = initialStore.screenId,
                     sourceNodeId = assertIs<LuaButtonNode>(refreshNode).id,
                     actionId = io.github.nguyenphuc22.luaui.core.LuaActionId("dashboard.refresh"),
-                    clientCapabilities = LuaCapabilities.foundation,
+                    clientCapabilities = clientCapabilities,
                 ),
             )
         }.body<LuaActionResponse>()
 
-        val refreshedState = initialState.accept(refreshedResponse)
-        val refreshedStore = assertIs<LuaScreenStoreState.Ready>(refreshedState.state).nodeStore
+        val refreshedSession = editedSession.accept(refreshedResponse)
+        val refreshedStore = assertIs<LuaScreenStoreState.Ready>(refreshedSession.screenStore.state).nodeStore
         val refreshedPrice = assertIs<LuaTextNode>(
             refreshedStore.find(LuaNodeId("dashboard.price"))?.node,
         )
+        val refreshedFilter = assertIs<LuaTextFieldNode>(
+            refreshedStore.find(LuaNodeId("dashboard.filter"))?.node,
+        )
 
         assertEquals("1501000 ₫", refreshedPrice.text)
+        assertEquals("rice", refreshedSession.localStateStore.draftFor(refreshedFilter).value)
+        assertTrue(refreshedSession.localStateStore.draftFor(refreshedFilter).isDirty)
         assertEquals(LuaNodeId("dashboard.refresh"), refreshNode?.id)
-        assertNotSame(initialState, refreshedState)
+        assertNotSame(initialSession, refreshedSession)
         assertNotSame(initialStore, refreshedStore)
         assertEquals(
             "1500000 ₫",
@@ -88,6 +100,31 @@ class DashboardHttpIntegrationTest {
             LuaNodeId("dashboard.refresh"),
             refreshedStore.find(LuaNodeId("dashboard.refresh"))?.node?.id,
         )
+    }
+
+    @Test
+    fun `server reports the TextField extension as incompatible to a foundation-only client`() = testApplication {
+        application {
+            dashboardModule(DashboardController())
+        }
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(LuaProtocolJson)
+            }
+        }
+
+        val response = client.post("/v1/screens/dashboard") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(
+                LuaScreenRequest(
+                    screenId = LuaScreenId("dashboard"),
+                    clientCapabilities = LuaCapabilities.foundation,
+                ),
+            )
+        }.body<LuaScreenResponse>()
+
+        val incompatible = assertIs<LuaScreenResponse.Incompatible>(response)
+        assertEquals(setOf(LuaCapabilities.textField), incompatible.missingCapabilities)
     }
 
     @Test

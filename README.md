@@ -7,7 +7,7 @@
 
 LuaUI giúp backend mô tả **cái gì** cần hiển thị, còn ứng dụng khách quyết định **hiển thị như thế nào** bằng UI native của từng nền tảng. Mục tiêu là thay đổi cấu trúc, nội dung và hành vi khai báo của màn hình mà không phải phát hành lại ứng dụng, nhưng chỉ trong giới hạn capability mà client đã cài đặt.
 
-> **Trạng thái hiện tại — Foundation 0.1 đã có reference baseline.** `main` có vertical slice Compose Desktop, canonical Proto3 compatibility contract, Runtime 0.2 NodeStore Phase 1, ScreenStore Phase 2 và CI đã kiểm thử. LocalStateStore Phase 3 mới chốt kiến trúc; chưa có stateful control implementation. Đây vẫn là `0.1.0-SNAPSHOT`: chưa có API/wire contract ổn định, artefact phát hành hay cam kết production support.
+> **Trạng thái hiện tại — Foundation 0.1 đã có reference baseline.** `main` có vertical slice Compose Desktop, canonical Proto3 compatibility contract, Runtime 0.2 NodeStore Phase 1, ScreenStore Phase 2 và TextField/LocalStateStore Phase 3 experimental đã được kiểm thử. Đây vẫn là `0.1.0-SNAPSHOT`: chưa có API/wire contract ổn định, artefact phát hành hay cam kết production support.
 
 ## Tại sao LuaUI?
 
@@ -71,7 +71,7 @@ Server DSL → validated LuaScreen → HTTP JSON → decode + validate
            → Submit → full replacement screen
 ```
 
-Phạm vi cố ý hẹp: `Column`, `Text`, `Button`, `Submit`, exact capability `@1`, stable node ID, error response typed và full-screen replacement. Proto3 schema + adapter JVM chứng minh JSON/Protobuf cùng semantic model; HTTP sample vẫn dùng JSON. Runtime 0.2 hiện có NodeStore snapshot/index và ScreenStore lifecycle; LocalStateStore mới có policy kiến trúc, chưa có `TextField`/control stateful. Patch, custom component, expression, navigation, WebSocket/gRPC và offline chưa được hiện thực.
+Foundation baseline cố ý hẹp: `Column`, `Text`, `Button`, `Submit`, exact capability `@1`, stable node ID, error response typed và full-screen replacement. Proto3 schema + adapter JVM chứng minh JSON/Protobuf cùng semantic model; HTTP sample vẫn dùng JSON. Runtime 0.2 thêm vertical slice experimental `TextField`: capability `component.text_field@1`, local draft memory-only và reconciliation qua immutable `LuaScreenSession`; `foundation` không tự bao gồm capability này và `Submit` không mang draft. Patch, custom component, expression, navigation, WebSocket/gRPC và offline chưa được hiện thực.
 
 ## Chạy Foundation 0.1
 
@@ -82,7 +82,7 @@ Yêu cầu JDK 21 trở lên. Gradle Wrapper tự quản lý phiên bản Gradle
 ./gradlew :sample:run
 ```
 
-Sample tự chạy một Ktor server cục bộ và mở Compose Desktop. Bấm **Refresh** để kiểm chứng action round-trip và full-screen replacement. Xem [hướng dẫn Foundation 0.1](docs/guides/foundation-0.1.md) để biết phạm vi và tiêu chí kiểm thử.
+Sample tự chạy một Ktor server cục bộ và mở Compose Desktop. Nhập text vào **Product filter**, sau đó bấm **Refresh**: giá đổi qua action round-trip còn draft local vẫn giữ nguyên qua full-screen replacement. Xem [hướng dẫn Foundation 0.1](docs/guides/foundation-0.1.md) để biết phạm vi và tiêu chí kiểm thử.
 
 ## Lộ trình triển khai
 
@@ -93,7 +93,7 @@ Server DSL → LuaNode → Serialize → Transport → Decode
           → KSP dispatcher → Compose → LuaAction → Server
 ```
 
-Foundation reference gồm `luaui-core`, `luaui-compose`, `luaui-material3`, `luaui-annotations`, `luaui-ksp`, `luaui-transport`, `luaui-server` và `sample`. Compatibility spike thêm `luaui-proto` (schema/bindings) cùng `luaui-proto-jvm` (adapter), không mở rộng transport. Runtime 0.2 thêm `luaui-runtime`: NodeStore Phase 1 đã cung cấp snapshot/index, ScreenStore Phase 2 đã cung cấp lifecycle full-screen, còn LocalStateStore Phase 3 đang ở mức architecture policy; patch, WebSocket, gRPC và offline persistence vẫn là các bước sau.
+Foundation reference gồm `luaui-core`, `luaui-compose`, `luaui-material3`, `luaui-annotations`, `luaui-ksp`, `luaui-transport`, `luaui-server` và `sample`. Compatibility spike thêm `luaui-proto` (schema/bindings) cùng `luaui-proto-jvm` (adapter), không mở rộng transport. Runtime 0.2 thêm `luaui-runtime`: NodeStore Phase 1 đã cung cấp snapshot/index, ScreenStore Phase 2 đã cung cấp lifecycle full-screen, LocalStateStore Phase 3 đã cung cấp typed TextField draft/session reconciliation experimental; patch, WebSocket, gRPC và offline persistence vẫn là các bước sau.
 
 Xem chi tiết tại [lộ trình](docs/roadmap.md).
 
