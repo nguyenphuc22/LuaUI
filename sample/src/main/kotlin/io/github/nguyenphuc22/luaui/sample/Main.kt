@@ -19,10 +19,12 @@ import io.github.nguyenphuc22.luaui.core.LuaCapabilities
 import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenRequest
 import io.github.nguyenphuc22.luaui.material3.generated.Material3GeneratedRendererDispatcher
-import io.github.nguyenphuc22.luaui.runtime.LuaScreenStore
+import io.github.nguyenphuc22.luaui.runtime.LuaScreenSession
 import io.github.nguyenphuc22.luaui.runtime.LuaScreenStoreState
 import io.github.nguyenphuc22.luaui.transport.HttpLuaTransport
 import kotlinx.coroutines.launch
+
+private val dashboardClientCapabilities = LuaCapabilities.foundation + LuaCapabilities.textField
 
 fun main() {
     val server = startDashboardServer()
@@ -30,21 +32,21 @@ fun main() {
     application {
         val transport = remember { HttpLuaTransport("http://127.0.0.1:8080") }
         val coroutineScope = rememberCoroutineScope()
-        var screenStore by remember {
+        var screenSession by remember {
             mutableStateOf(
-                LuaScreenStore.loading(
+                LuaScreenSession.loading(
                     screenId = LuaScreenId("dashboard"),
-                    clientCapabilities = LuaCapabilities.foundation,
+                    clientCapabilities = dashboardClientCapabilities,
                 ),
             )
         }
 
         LaunchedEffect(Unit) {
-            screenStore = screenStore.accept(
+            screenSession = screenSession.accept(
                 transport.loadScreen(
                     LuaScreenRequest(
-                        screenId = screenStore.screenId,
-                        clientCapabilities = LuaCapabilities.foundation,
+                        screenId = screenSession.screenId,
+                        clientCapabilities = dashboardClientCapabilities,
                     ),
                 ),
             )
@@ -60,20 +62,23 @@ fun main() {
         ) {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    when (val current = screenStore.state) {
+                    when (val current = screenSession.screenStore.state) {
                         LuaScreenStoreState.Loading -> CircularProgressIndicator()
                         is LuaScreenStoreState.Ready -> LuaScreenHost(
-                            nodeStore = current.nodeStore,
+                            screenSession = screenSession,
                             dispatcher = Material3GeneratedRendererDispatcher,
+                            onTextFieldValueChange = { nodeId, value ->
+                                screenSession = screenSession.updateTextField(nodeId, value)
+                            },
                             onAction = { nodeId, action ->
                                 coroutineScope.launch {
-                                    screenStore = screenStore.accept(
+                                    screenSession = screenSession.accept(
                                         transport.dispatchAction(
                                             request = io.github.nguyenphuc22.luaui.core.LuaActionRequest(
                                                 screenId = current.nodeStore.screenId,
                                                 sourceNodeId = nodeId,
                                                 actionId = action.actionId,
-                                                clientCapabilities = LuaCapabilities.foundation,
+                                                clientCapabilities = dashboardClientCapabilities,
                                             ),
                                         ),
                                     )

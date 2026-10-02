@@ -23,13 +23,14 @@ Lệnh thứ hai tự khởi động Ktor server cục bộ tại `127.0.0.1:808
 
 1. Sample tải screen `dashboard` qua HTTP.
 2. Client decode và validate typed JSON + capability `@1` trước render.
-3. KSP-generated dispatcher chọn Material 3 renderer cho `Column`, `Text` và `Button`.
-4. Bấm **Refresh** để gửi một `Submit` action với `screenId`, `sourceNodeId` và `actionId`.
-5. Server re-authorize action, trả về full replacement screen cùng stable IDs; giá hiển thị thay đổi.
+3. KSP-generated dispatcher chọn Material 3 renderer cho `Column`, `Text`, capability-gated `TextField` và `Button`.
+4. Nhập một giá trị vào **Product filter**. Giá trị này chỉ đổi local draft, không gửi network request.
+5. Bấm **Refresh** để gửi một `Submit` action với `screenId`, `sourceNodeId` và `actionId`.
+6. Server re-authorize action, trả về full replacement screen cùng stable IDs; giá hiển thị thay đổi còn draft dirty vẫn giữ nguyên.
 
 ## Những gì chưa có
 
-Đây không phải bản demo của toàn bộ Blueprint. Runtime 0.2 hiện có NodeStore snapshot/index và ScreenStore lifecycle cho full-screen response; LocalStateStore đã có policy kiến trúc nhưng chưa có control/input implementation. Foundation 0.1 vẫn chưa bao gồm patch, custom component, expression, navigation, gRPC, WebSocket, offline/cache, Android/iOS sample, persistence, observability hay production security policy.
+Đây không phải bản demo của toàn bộ Blueprint. Runtime 0.2 hiện có NodeStore snapshot/index, ScreenStore lifecycle và LocalStateStore/TextField vertical slice cho full-screen response; `TextField` vẫn experimental và không có action payload. Foundation 0.1 vẫn chưa bao gồm patch, custom component, expression, navigation, gRPC, WebSocket, offline/cache, Android/iOS sample, persistence, observability hay production security policy.
 
 Contract cụ thể nằm tại [Protocol 0.1](../specs/protocol-0.1.md). Mọi mở rộng public phải có compatibility story, tests và ADR khi phù hợp.
 
@@ -45,7 +46,7 @@ Xem [Proto3 0.1](../specs/protobuf-0.1.md) để biết nguồn schema, ranh gi�
 
 ## Runtime NodeStore Phase 1, ScreenStore Phase 2 và LocalStateStore Phase 3
 
-Runtime 0.2 có NodeStore KMP-safe để tạo snapshot/index sau validation và ScreenStore bất biến để biến typed full-screen/action response thành state `Loading`, `Ready`, `Incompatible` hoặc `Failure`. LocalStateStore mới chốt ownership/reconciliation policy cho local input/focus/scroll; sample vẫn chưa có control stateful, patch hay local state implementation:
+Runtime 0.2 có NodeStore KMP-safe để tạo snapshot/index sau validation và ScreenStore bất biến để biến typed full-screen/action response thành state `Loading`, `Ready`, `Incompatible` hoặc `Failure`. `LuaScreenSession` hiện phối hợp chúng với `LuaLocalStateStore` typed draft cho `TextField`; renderer Material 3 không giữ raw text riêng. Capability `component.text_field@1` được sample quảng cáo thêm ngoài Foundation, còn `Submit` không mang draft:
 
 ```bash
 ./gradlew :luaui-runtime:allTests

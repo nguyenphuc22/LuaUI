@@ -29,4 +29,27 @@ class LuaProtocolJsonTest {
 
         assertEquals(screen, decoded)
     }
+
+    @Test
+    fun `TextField definition survives strict JSON round trip without a local draft`() {
+        val screen = LuaScreen(
+            id = LuaScreenId("dashboard"),
+            root = LuaColumnNode(
+                id = LuaNodeId("dashboard.root"),
+                children = listOf(
+                    LuaTextFieldNode(
+                        id = LuaNodeId("dashboard.filter"),
+                        label = "Filter",
+                        initialValue = "all",
+                    ),
+                ),
+            ),
+            requiredCapabilities = setOf(LuaCapabilities.column, LuaCapabilities.textField),
+        )
+
+        val encoded = LuaProtocolJson.encodeToString(screen)
+        val decoded = LuaProtocolJson.decodeFromString<LuaScreen>(encoded)
+
+        assertEquals(screen, decoded)
+    }
 }

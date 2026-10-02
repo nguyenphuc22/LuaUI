@@ -29,6 +29,7 @@ message Node {
     ColumnNode column = 2;
     TextNode text = 3;
     ButtonNode button = 4;
+    TextFieldNode text_field = 5;
   }
 }
 
@@ -43,6 +44,13 @@ message TextNode {
 message ButtonNode {
   string label = 1;
   Action on_click = 2;
+}
+
+// The server provides only the initial baseline. The mutable draft stays client-owned and is
+// intentionally absent from ActionRequest in this vertical slice.
+message TextFieldNode {
+  string label = 1;
+  string initial_value = 2;
 }
 
 message Action {

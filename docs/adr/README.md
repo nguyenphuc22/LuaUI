@@ -23,5 +23,6 @@ ADR ghi lại những trade-off kiến trúc có tuổi thọ dài. Chúng bổ 
 | [0008](0008-foundation-0-1-reference-contract.md) | Dựng reference contract đóng cho Foundation 0.1 | Accepted |
 | [0009](0009-proto3-canonical-schema-compatibility-spike.md) | Proto3 canonical schema cho compatibility spike | Accepted |
 | [0010](0010-local-ui-state-ownership-and-reconciliation.md) | Local UI state thuộc client và reconcile theo stable identity | Accepted |
+| [0011](0011-textfield-local-draft-vertical-slice.md) | TextField capability-gated với client-owned local draft | Accepted |
 
 Xem [hướng dẫn đóng góp](../../CONTRIBUTING.md) để biết khi nào một đề xuất cần ADR.

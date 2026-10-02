@@ -70,6 +70,10 @@ class DashboardController : LuaScreenController {
         column("dashboard.root") {
             text("dashboard.title", "LuaUI Dashboard")
             text("dashboard.price", "${1_500_000L + refresh * 1_000L} ₫")
+            textField(
+                id = "dashboard.filter",
+                label = "Product filter",
+            )
             button(
                 id = refreshNodeId.value,
                 label = "Refresh",

@@ -9,6 +9,7 @@ import io.github.nguyenphuc22.luaui.core.LuaNode
 import io.github.nguyenphuc22.luaui.core.LuaNodeId
 import io.github.nguyenphuc22.luaui.core.LuaScreen
 import io.github.nguyenphuc22.luaui.core.LuaScreenId
+import io.github.nguyenphuc22.luaui.core.LuaTextFieldNode
 import io.github.nguyenphuc22.luaui.core.LuaTextNode
 
 @DslMarker
@@ -51,6 +52,19 @@ class LuaColumnBuilder internal constructor(
 
     fun text(id: String, value: String) {
         children += LuaTextNode(id = LuaNodeId(id), text = value)
+    }
+
+    /** Adds a capability-gated TextField whose live draft remains client-owned. */
+    fun textField(
+        id: String,
+        label: String,
+        initialValue: String = "",
+    ) {
+        children += LuaTextFieldNode(
+            id = LuaNodeId(id),
+            label = label,
+            initialValue = initialValue,
+        )
     }
 
     fun button(id: String, label: String, action: LuaAction) {

@@ -22,4 +22,24 @@ class LuaScreenDslTest {
             LuaProtocolValidator.validateScreen(screen, LuaCapabilities.foundation),
         )
     }
+
+    @Test
+    fun `DSL declares the TextField extension instead of widening foundation`() {
+        val screen = luaScreen("dashboard") {
+            column("dashboard.root") {
+                textField("dashboard.filter", "Filter", initialValue = "all")
+            }
+        }
+
+        assertEquals(
+            setOf(LuaCapabilities.column, LuaCapabilities.textField),
+            screen.requiredCapabilities,
+        )
+        assertIs<LuaScreenValidationResult.Valid>(
+            LuaProtocolValidator.validateScreen(
+                screen,
+                LuaCapabilities.foundation + LuaCapabilities.textField,
+            ),
+        )
+    }
 }

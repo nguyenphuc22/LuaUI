@@ -28,7 +28,7 @@ typed response → LuaScreenStore.accept
 
 ## Những điều cố ý chưa làm
 
-Không có local input/focus/scroll state implementation, patch/revision/reconciliation, response ordering hoặc stale-response discard, navigation, cache/offline, action retry/cancellation/progress/idempotency, `StateFlow`/Compose-state ownership hay renderer lỗi Compose. Local state ownership/reconciliation cho full replacement đã được chốt tại [LocalStateStore 0.2](runtime-local-state-store-0.2.md), nhưng store implementation vẫn intentionally deferred. Host serialize event theo nhu cầu ứng dụng; protocol chưa có correlation/revision để runtime quyết định an toàn response nào thắng.
+`LuaScreenStore` không tự giữ local input/focus/scroll state, patch/revision/reconciliation, response ordering hoặc stale-response discard, navigation, cache/offline, action retry/cancellation/progress/idempotency, `StateFlow`/Compose-state ownership hay renderer lỗi Compose. [LocalStateStore 0.2](runtime-local-state-store-0.2.md) hiện có TextField vertical slice qua `LuaScreenSession`, nhưng ScreenStore vẫn giữ ranh giới riêng: nó chỉ tạo candidate `Ready(nodeStore)`. Host serialize event theo nhu cầu ứng dụng; protocol chưa có correlation/revision để runtime quyết định an toàn response nào thắng.
 
 Patch ordering, local-edit conflict và action lifecycle tiếp tục là [câu hỏi mở](../architecture/open-questions.md#stable-id--patch) và [câu hỏi về action](../architecture/open-questions.md#expressions--actions).
 
@@ -42,4 +42,4 @@ Patch ordering, local-edit conflict và action lifecycle tiếp tục là [câu 
 
 ## Evolution boundary
 
-Khi hiện thực local `StateStore`, thêm patch hoặc asynchronous action lifecycle, cần spec/ADR riêng cho typed slot API, cancellation, ordering, revision, atomicity và conflict policy. Không dùng ScreenStore Phase 2 để ngầm định một trong các policy đó.
+Khi thêm slot local khác, patch hoặc asynchronous action lifecycle, cần spec/ADR riêng cho typed slot API, cancellation, ordering, revision, atomicity và conflict policy. Không dùng ScreenStore Phase 2 để ngầm định một trong các policy đó.

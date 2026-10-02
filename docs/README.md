@@ -1,6 +1,6 @@
 # Tài liệu LuaUI
 
-Đây là chỉ mục cho Architecture Blueprint v1 của LuaUI. Bộ tài liệu gồm kiến trúc đã chốt, Foundation 0.1 reference baseline, delivery planned và các câu hỏi Open cần đặc tả. Không mục nào là API hoặc wire contract đã phát hành ổn định.
+Đây là chỉ mục cho Architecture Blueprint v1 của LuaUI. Bộ tài liệu gồm kiến trúc đã chốt, Foundation 0.1 reference baseline, vertical slice Runtime 0.2 experimental và các câu hỏi Open cần đặc tả. Không mục nào là API hoặc wire contract đã phát hành ổn định.
 
 ## Điểm vào theo vai trò
 
@@ -29,7 +29,7 @@ docs/
 │   ├── protobuf-0.1.md            # Proto3 canonical compatibility spike
 │   ├── runtime-node-store-0.2.md  # Runtime snapshot/index Phase 1
 │   ├── runtime-screen-store-0.2.md # Runtime lifecycle snapshot Phase 2
-│   └── runtime-local-state-store-0.2.md # Runtime local-state policy Phase 3
+│   └── runtime-local-state-store-0.2.md # Runtime TextField/local-state Phase 3
 ├── guides/
 │   └── foundation-0.1.md          # Cách chạy và phạm vi vertical slice
 ├── reference/

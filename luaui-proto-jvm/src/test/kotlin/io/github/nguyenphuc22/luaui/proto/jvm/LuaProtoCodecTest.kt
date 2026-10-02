@@ -19,6 +19,7 @@ import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenRequest
 import io.github.nguyenphuc22.luaui.core.LuaScreenResponse
 import io.github.nguyenphuc22.luaui.core.LuaScreenValidationResult
+import io.github.nguyenphuc22.luaui.core.LuaTextFieldNode
 import io.github.nguyenphuc22.luaui.core.LuaTextNode
 import io.github.nguyenphuc22.luaui.proto.v1.ButtonNode as ProtoButtonNode
 import io.github.nguyenphuc22.luaui.proto.v1.Capability as ProtoCapability
@@ -102,6 +103,27 @@ class LuaProtoCodecTest {
     }
 
     @Test
+    fun `TextField maps through Proto3 as a capability-gated definition without draft payload`() {
+        val screen = LuaScreen(
+            id = LuaScreenId("dashboard"),
+            root = LuaTextFieldNode(
+                id = LuaNodeId("dashboard.filter"),
+                label = "Filter",
+                initialValue = "all",
+            ),
+            requiredCapabilities = setOf(LuaCapabilities.textField),
+        )
+
+        val proto = screen.root.toProto()
+        val roundTrip = LuaProtoCodec.decodeScreen(LuaProtoCodec.encode(screen))
+
+        assertEquals(ProtoNode.KindCase.TEXT_FIELD, proto.kindCase)
+        assertEquals("Filter", proto.textField.label)
+        assertEquals("all", proto.textField.initialValue)
+        assertEquals(screen, roundTrip)
+    }
+
+    @Test
     fun `encoder rejects invalid incompatible capabilities`() {
         assertFailsWith<IllegalArgumentException> {
             LuaProtoCodec.encode(
@@ -152,7 +174,7 @@ class LuaProtoCodecTest {
         assertEquals(1, ProtoScreen.getDescriptor().findFieldByName("id").number)
         assertEquals(4, ProtoScreen.getDescriptor().findFieldByName("root").number)
         assertEquals(
-            setOf("column", "text", "button"),
+            setOf("column", "text", "button", "text_field"),
             ProtoNode.getDescriptor()
                 .oneofs
                 .single { descriptor -> descriptor.name == "kind" }
@@ -160,6 +182,7 @@ class LuaProtoCodecTest {
                 .map { field -> field.name }
                 .toSet(),
         )
+        assertEquals(5, ProtoNode.getDescriptor().findFieldByName("text_field").number)
     }
 
     private fun dashboard(): LuaScreen {

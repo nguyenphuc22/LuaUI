@@ -2,7 +2,7 @@
 
 > **Status:** Accepted for the Foundation 0.1 compatibility spike
 >
-> **Scope:** Canonical Proto3 schema, generated JVM bindings and typed compatibility adapter for Foundation 0.1. This is not a stable public wire API and does not switch the HTTP sample away from JSON.
+> **Scope:** Canonical Proto3 schema, generated JVM bindings and typed compatibility adapter for the Foundation 0.1 baseline plus its capability-gated TextField experiment. This is not a stable public wire API and does not switch the HTTP sample away from JSON.
 
 ## Source of truth and boundary
 
@@ -17,14 +17,14 @@ Typed JSON remains the reference serialization for the Foundation 0.1 HTTP sampl
 | Semantic type | Proto3 representation |
 | --- | --- |
 | `LuaScreen` | `Screen` with explicit ID, protocol/schema versions, root and repeated capabilities |
-| `LuaNode` | `Node.id` plus exactly one `column`, `text` or `button` `oneof` member |
+| `LuaNode` | `Node.id` plus exactly one `column`, `text`, `button` or additive `text_field` `oneof` member |
 | `LuaAction.Submit` | `Action.action_id` plus `submit` `oneof` member |
 | Requests | `ScreenRequest` and `ActionRequest` |
 | Screen result | `ScreenResponse = screen | incompatible | failure` |
 | Action result | `ActionResponse = screen | failure` |
 | Failure | `LuaError` with closed `ErrorCode` enum |
 
-The field numbers in the schema are part of the contract. They are never reordered, reused or given a new semantic meaning. Removed fields must reserve both their tag and name in a future schema edit.
+The field numbers in the schema are part of the contract. They are never reordered, reused or given a new semantic meaning. `Node.text_field = 5` is an append-only, capability-gated extension; its fields are only `label` and `initial_value`, never a mutable local draft. Removed fields must reserve both their tag and name in a future schema edit.
 
 ## Decode and validation rules
 
@@ -37,7 +37,7 @@ The field numbers in the schema are part of the contract. They are never reorder
 
 ## Compatibility evidence
 
-`LuaProtoCodecTest` verifies a nested Dashboard fixture with Unicode text through both JSON and Proto3, then asserts the same domain model. It also guards a deterministic Proto3 golden payload, every request/response `oneof` branch, every error-code mapping, selected descriptor tags and invalid payload behavior.
+`LuaProtoCodecTest` verifies a nested Foundation Dashboard fixture with Unicode text through both JSON and Proto3, then asserts the same domain model. A separate TextField fixture guards the additive `text_field` mapping and tag `5`; the existing Foundation golden remains stable. The suite also covers every request/response `oneof` branch, error-code mapping, selected descriptor tags and invalid payload behavior.
 
 Run the focused check with:
 

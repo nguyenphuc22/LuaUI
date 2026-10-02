@@ -23,6 +23,8 @@ LuaScreen
 
 `LuaNode` luôn có `id` và exactly one typed content, ví dụ `TextNode`, `ButtonNode`, `ColumnNode`, `LazyListNode` hoặc `CustomNode`. Baseline component set, field shape và wire field number chưa được công bố; ví dụ trên chỉ mô tả ranh giới contract.
 
+Implementation hiện có một extension hẹp: `LuaTextFieldNode(id, label, initialValue)` chỉ được gửi khi client công bố `component.text_field@1`. `initialValue` là baseline server; live draft không thuộc `LuaNode`, không nằm trong action request và được runtime giữ local. Xem [Protocol 0.1](../specs/protocol-0.1.md) và [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md).
+
 ### Stable node ID
 
 Mỗi node **BẮT BUỘC** có stable ID. ID phải tiếp tục ổn định khi node còn cùng ý nghĩa nghiệp vụ; không được dùng vị trí trong tree làm ID. Identity policy phải cho phép runtime resolve node không mơ hồ trong screen hiện tại. Foundation 0.1 chốt ID unique trong một screen; policy cho các version sau vẫn có thể mở rộng có chủ đích.
