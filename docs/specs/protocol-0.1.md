@@ -72,4 +72,4 @@ For this closed 0.1 contract, unknown JSON fields and unknown polymorphic node/a
 
 ## Explicit deferrals
 
-This spec intentionally does **not** decide patch revision/ordering, dynamic capability fallback, custom component schemas, local state ownership, action payloads/retry, authentication, cache encryption, gRPC service or native Protobuf bindings. Those items remain in [architecture open questions](../architecture/open-questions.md) and require their own ADR/spec before public release.
+This spec intentionally does **not** decide patch revision/ordering, dynamic capability fallback, custom component schemas, local-state wire representation/persistence, action payloads/retry, authentication, cache encryption, gRPC service or native Protobuf bindings. Local-state runtime ownership is decided separately in [ADR-0010](../adr/0010-local-ui-state-ownership-and-reconciliation.md), but its protocol representation remains deferred. The remaining items require their own ADR/spec before public release.

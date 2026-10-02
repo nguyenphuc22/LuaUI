@@ -8,12 +8,13 @@
 | **LuaNode** | Node UI typed có stable ID và một loại content/component. |
 | **UI definition** | Tree UI bất biến do server mô tả; không đồng nghĩa với local UI state. |
 | **Server state** | Data/configuration từ server như price, permission, product, title. |
-| **Local UI state** | State tương tác cục bộ như input, focus, scroll, gesture, animation, expanded state. |
+| **Local UI state** | State tương tác cục bộ như input, focus, scroll, gesture, animation, expanded state; thuộc client, không mutate UI definition và không round-trip ở mỗi keystroke. |
 | **Stable ID** | ID ổn định của node, dùng làm key xuyên state/patch/test/analytics; Foundation 0.1 yêu cầu unique trong screen, còn scope/generator rộng hơn sẽ được đặc tả trước public API. |
 | **LuaTree Builder** | Thành phần Server SDK tạo typed tree từ DSL và business data. |
 | **Lua Runtime** | Client runtime xử lý definition, validation, state boundary, action, patch, navigation và render dispatch. |
 | **NodeStore** | Snapshot/index screen-scoped bất biến từ `NodeId → LuaNode` cùng quan hệ tree để lookup hiệu quả và chuẩn bị cho patch. |
 | **ScreenStore** | State machine screen-scoped bất biến biến typed response thành `Loading`, `Ready`, `Incompatible` hoặc `Failure`; host sở hữu observable UI state và thay một successor hoàn chỉnh. |
+| **LocalStateStore** | State store tương lai, memory-only và scoped theo screen session, giữ typed local entries qua replacement tương thích; không chứa Compose controller, server state hay persistence mặc định. |
 | **LuaAction** | Mô tả hành động declarative do user interaction hoặc runtime dispatch. |
 | **Expression** | AST typed/allowlisted cho logic UI động, không phải executable code. |
 | **Patch** | Thay đổi tăng dần vào definition thay vì tải lại toàn bộ screen. |

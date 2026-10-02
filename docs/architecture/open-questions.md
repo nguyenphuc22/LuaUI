@@ -10,7 +10,7 @@
 - Runtime 0.2 Phase 1 đã có NodeStore snapshot/index theo scope một screen, và Phase 2 có ScreenStore full-response lifecycle. Revision, action response ordering, stale-response discard và mutation policy cho patch vẫn chưa được chốt.
 - Patch có `revision`/`baseRevision` không? Xử lý duplicate, out-of-order, replay và retry thế nào?
 - `Batch` có atomic không? Partial failure báo thế nào và tree có rollback không?
-- Patch conflict với local input/focus/draft được resolve theo ownership nào?
+- [ADR-0010](../adr/0010-local-ui-state-ownership-and-reconciliation.md) chốt retain/prune local state cho full-screen replacement. Patch conflict với dirty draft/focus/scroll, revision và batch rollback vẫn cần policy riêng.
 
 ## Schema & wire format
 
@@ -31,6 +31,7 @@
 - Type system, null semantics, locale/date behavior, overflow/divide-by-zero và dependency tracking của expression là gì?
 - Có giới hạn complexity/depth/evaluation budget nào?
 - Action network retry, cancellation, optimistic state, progress và idempotency được mô hình hoá thế nào?
+- Action acknowledgement/correlation nào cho phép clear hoặc merge local draft một cách rõ ràng, thay vì coi full response là reset?
 - `OpenUrl`/deep link sử dụng route grammar và trust policy nào?
 
 ## Offline & local edits
@@ -38,7 +39,7 @@
 - Cache key, TTL, invalidation, stale-data UX và user/session isolation là gì?
 - Cache cần encryption ở layer nào; payload nào được phép persist?
 - Offline action queue/retry/conflict có thuộc phạm vi LuaUI hay app adapter?
-- Local form draft được retain/lost trong full refresh hay patch như thế nào?
+- Full-screen retain/prune policy đã được chốt tại [ADR-0010](../adr/0010-local-ui-state-ownership-and-reconciliation.md); persistence, encryption, TTL và local draft conflict với patch/offline queue vẫn cần spec.
 
 ## Security & privacy
 

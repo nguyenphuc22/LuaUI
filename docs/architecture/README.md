@@ -64,19 +64,20 @@ Business component là first-class. Khi client đã biết `OrderSummary`, serve
 
 Kiến trúc đích có các vùng `core`, `compiler`, `rendering`, `state`, `actions`, `transport`, `storage`, `server`, `observability`, `tooling` và `samples`. Chúng là ranh giới logic, **không** phải chỉ thị phải tạo tất cả ngay từ đầu.
 
-MVP trước mắt chỉ gồm:
+Foundation vertical slice ban đầu gồm:
 
 ```text
 luaui-core · luaui-compose · luaui-material3 · luaui-annotations
 luaui-ksp · luaui-transport · luaui-server · sample
 ```
 
-Không có dependency bắt buộc kiểu `luaui-all`. Adapter cho gRPC, SQLDelight, OpenTelemetry, analytics hay design system tùy chỉnh được thêm sau khi vertical slice chứng minh core contract.
+Sau khi vertical slice chứng minh core contract, Runtime 0.2 thêm `luaui-runtime` cho NodeStore/ScreenStore; LocalStateStore hiện mới có policy kiến trúc. Không có dependency bắt buộc kiểu `luaui-all`. Adapter cho gRPC, SQLDelight, OpenTelemetry, analytics hay design system tùy chỉnh được thêm sau khi có consumer và contract tương ứng.
 
 ## Đọc tiếp
 
 - [Protocol & compatibility](protocol.md)
 - [Runtime & rendering](runtime.md)
+- [LocalStateStore 0.2](../specs/runtime-local-state-store-0.2.md)
 - [Platform & integration](platform.md)
 - [Quality & operations](quality.md)
 - [Các câu hỏi cần đặc tả](open-questions.md)

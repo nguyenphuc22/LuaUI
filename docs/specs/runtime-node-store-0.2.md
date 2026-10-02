@@ -2,7 +2,7 @@
 
 > **Status:** Implemented, experimental Runtime 0.2 API
 >
-> **Scope:** Một snapshot/index bất biến cho `LuaScreen` đã validate. Đây chưa phải patch engine, StateStore cho local UI, cache, navigation hay public/stable API.
+> **Scope:** Một snapshot/index bất biến cho `LuaScreen` đã validate. Đây chưa phải patch engine, local UI StateStore implementation, cache, navigation hay public/stable API.
 
 ## Mục tiêu
 
@@ -25,7 +25,7 @@ LuaScreen response → validate → LuaNodeStore.create → immutable snapshot/i
 
 ## Những điều cố ý chưa làm
 
-Không có patch/revision, reconciliation mutating store, local input/focus/scroll state, action retry/cancellation, cache, Inspector, WebSocket, gRPC hay HTTP Protobuf. Revision ordering, batch atomicity và conflict với local edit vẫn là [câu hỏi mở](../architecture/open-questions.md#stable-id--patch).
+Không có patch/revision, reconciliation mutating store, local input/focus/scroll **implementation**, action retry/cancellation, cache, Inspector, WebSocket, gRPC hay HTTP Protobuf. Local state ownership đã được chốt tại [LocalStateStore 0.2](runtime-local-state-store-0.2.md); revision ordering, batch atomicity và conflict với local edit vẫn là [câu hỏi mở](../architecture/open-questions.md#stable-id--patch).
 
 ## Evidence
 
@@ -37,4 +37,4 @@ Không có patch/revision, reconciliation mutating store, local input/focus/scro
 
 ## Evolution boundary
 
-Khi thêm patch hoặc local `StateStore`, cần một spec/ADR riêng cho revision, ownership, atomicity và conflict policy. Không thêm metadata patch vào `LuaScreen` hay Proto3 schema trong Phase 1.
+Khi hiện thực local `StateStore`, thêm patch hoặc asynchronous action lifecycle, cần spec/ADR riêng cho typed slot API, revision, ownership, atomicity và conflict policy. Không thêm metadata patch vào `LuaScreen` hay Proto3 schema trong Phase 1.
