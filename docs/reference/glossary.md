@@ -8,15 +8,18 @@
 | **LuaNode** | Node UI typed có stable ID và một loại content/component. |
 | **UI definition** | Tree UI bất biến do server mô tả; không đồng nghĩa với local UI state. |
 | **Server state** | Data/configuration từ server như price, permission, product, title. |
-| **Local UI state** | State tương tác cục bộ như input, focus, scroll, gesture, animation, expanded state; thuộc client, không mutate UI definition và không round-trip ở mỗi keystroke. |
+| **Local UI state** | State tương tác cục bộ như input, focus, scroll, gesture, animation, expanded state; thuộc client, không mutate UI definition và không round-trip ở mỗi keystroke. Phase 4 chỉ gửi snapshot `TextField` ở submit boundary tường minh. |
 | **Stable ID** | ID ổn định của node, dùng làm key xuyên state/patch/test/analytics; Foundation 0.1 yêu cầu unique trong screen, còn scope/generator rộng hơn sẽ được đặc tả trước public API. |
 | **LuaTree Builder** | Thành phần Server SDK tạo typed tree từ DSL và business data. |
 | **Lua Runtime** | Client runtime xử lý definition, validation, state boundary, action, patch, navigation và render dispatch. |
 | **NodeStore** | Snapshot/index screen-scoped bất biến từ `NodeId → LuaNode` cùng quan hệ tree để lookup hiệu quả và chuẩn bị cho patch. |
 | **ScreenStore** | State machine screen-scoped bất biến biến typed response thành `Loading`, `Ready`, `Incompatible` hoặc `Failure`; host sở hữu observable UI state và thay một successor hoàn chỉnh. |
-| **LocalStateStore** | State store memory-only, scoped theo screen session, giữ typed local entries qua replacement tương thích; vertical slice hiện có `TextField` draft, không chứa Compose controller, server state hay persistence mặc định. |
-| **LuaScreenSession** | Một successor bất biến gồm ScreenStore và LocalStateStore, để host publish definition mới cùng local draft đã reconcile trong một state assignment. |
-| **LuaAction** | Mô tả hành động declarative do user interaction hoặc runtime dispatch. |
+| **LocalStateStore** | State store memory-only, scoped theo screen session, giữ typed local entries qua replacement tương thích; vertical slice hiện có `TextField` draft cùng revision/slot identity nội bộ, không chứa Compose controller, server state hay persistence mặc định. |
+| **LuaScreenSession** | Một successor bất biến gồm ScreenStore và LocalStateStore, để host publish definition mới cùng local draft đã reconcile trong một state assignment. Với Phase 4, host dùng `prepareAction`/`complete` để snapshot và settle acknowledgement TextField khớp. |
+| **LuaAction** | Mô tả hành động declarative do user interaction hoặc runtime dispatch. `Submit@1` legacy chỉ mang identifiers; `SubmitTextFields` là extension typed capability-gated. |
+| **LuaSubmissionId** | ID opaque, unique theo một invocation `SubmitTextFields`, chỉ để correlate acknowledgement với snapshot local; không phải authentication credential, replay nonce hay idempotency key. |
+| **LuaPreparedAction** | Cặp request transport-ready và snapshot local opaque do `LuaScreenSession.prepareAction` tạo; dùng bởi `complete` để kiểm tra acknowledgement, không phải payload application tự dựng. Acknowledgement hợp lệ khớp sẽ consume nó một lần, để replay không áp dụng replacement thứ hai. |
+| **AcknowledgedScreen** | Action response gồm full replacement screen và `LuaTextFieldAcknowledgement`, không có partial acceptance. Sau khi acknowledgement khớp toàn bộ submission trong cùng session, runtime chỉ settle từng draft có slot/revision/value local riêng còn khớp; raw value chuẩn hoá nằm ở `LuaTextFieldNode.initialValue`. |
 | **Expression** | AST typed/allowlisted cho logic UI động, không phải executable code. |
 | **Patch** | Thay đổi tăng dần vào definition thay vì tải lại toàn bộ screen. |
 | **Reconciliation** | Đồng bộ tree/state sau patch và invalidation vùng render liên quan. |

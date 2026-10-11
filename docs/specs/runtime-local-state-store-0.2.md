@@ -2,7 +2,7 @@
 
 > **Status:** Implemented, experimental Runtime 0.2 API
 >
-> **Scope:** Local, ephemeral interaction state cho một screen session. Vertical slice hiện chỉ hiện thực typed draft cho `TextField`; đây không phải patch engine, persistence, action payload contract, Compose state container hay public/stable API.
+> **Scope:** Local, ephemeral interaction state cho một screen session. Vertical slice hiện thực typed draft cho `TextField`; Phase 4 dùng nó qua một submit/acknowledgement boundary riêng. LocalStateStore không tự sở hữu wire payload, network scheduling, patch engine, persistence, Compose state container hay public/stable API.
 
 ## Mục tiêu
 
@@ -14,7 +14,7 @@ LuaScreen response → ScreenStore / NodeStore candidate
                  → one screen-session successor → host state assignment → Compose
 ```
 
-Contract này cụ thể hóa [ADR-0010](../adr/0010-local-ui-state-ownership-and-reconciliation.md) và được triển khai lần đầu qua [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md). Nó không mở generic StateStore hay action payload contract.
+Contract này cụ thể hóa [ADR-0010](../adr/0010-local-ui-state-ownership-and-reconciliation.md) và được triển khai lần đầu qua [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md). [ADR-0012](../adr/0012-textfield-submission-acknowledgement-vertical-slice.md) bổ sung một boundary submit/ack hẹp trên `LuaScreenSession`; nó không mở generic StateStore hay generic action payload contract.
 
 ## Ownership boundary
 
@@ -44,10 +44,10 @@ Local state bắt đầu memory-only và bị clear khi session đóng, screen/s
 ## Bề mặt đã hiện thực
 
 - `LuaTextFieldNode(id, label, initialValue)` là definition capability-gated bởi `component.text_field@1`. `LuaCapabilities.foundation` vẫn giữ nguyên, nên client Foundation cũ không tự quảng cáo renderer mới.
-- `LuaLocalStateStore` chỉ giữ `LuaTextFieldDraft(value, serverBaseline, isDirty)` trong map private typed theo `LuaNodeId`; không có `Map<NodeId, Any?>` public hoặc mutable global state.
-- `LuaScreenSession` đóng gói `LuaScreenStore` và `LuaLocalStateStore`. `accept(...)` chỉ reconcile sau khi ScreenStore tạo `Ready(nodeStore)` hợp lệ; host publish đúng một successor session vào observable state.
+- `LuaLocalStateStore` chỉ giữ `LuaTextFieldDraft(value, serverBaseline, isDirty, draftRevision)` trong map private typed theo `LuaNodeId`; `draftRevision` tăng khi value đổi. Slot generation là chi tiết nội bộ để phân biệt một ID đã bị prune rồi xuất hiện lại; không có `Map<NodeId, Any?>` public hoặc mutable global state.
+- `LuaScreenSession` đóng gói `LuaScreenStore` và `LuaLocalStateStore`. `accept(...)` chỉ reconcile sau khi ScreenStore tạo `Ready(nodeStore)` hợp lệ; host publish đúng một successor session vào observable state. `prepareAction(...)` và `complete(...)` là boundary Phase 4 để snapshot/settle một submit đã được khai báo, không phải scheduler hay generic action engine.
 - Compose Material 3 đọc draft qua `LuaRenderContext` và gửi keystroke về callback session. `LuaScreenHost(screenSession = ...)` là entry point ưu tiên; overload NodeStore/raw Screen **có** LocalStateStore cần cùng `screenId` và callback phải publish `session = session.updateTextField(...)`. Overload Foundation raw Screen cũ reject TextField rõ ràng. Renderer không `remember` raw text.
-- `LuaActionRequest` và `LuaAction.Submit` không đổi: draft không được serialize hoặc gửi ở mỗi keystroke/action trong slice này.
+- `LuaAction.Submit@1` và JSON legacy của nó không đổi: draft không được serialize hoặc gửi ở mỗi keystroke/action. Chỉ `SubmitTextFields@1`, sau `action.submit_text_fields@1`, mới gửi snapshot typed tại submit boundary; xem [TextField submission Runtime 0.2](runtime-text-field-submission-0.2.md).
 
 ## Full-screen reconciliation contract
 
@@ -73,8 +73,8 @@ Draft có `value`, server-provided baseline và dirty/pristine status. Khi node 
 
 - Draft dirty giữ local `value`; full response chỉ cập nhật baseline, không overwrite text user đang sửa hoặc tự clear `dirty`.
 - Draft pristine được reseed bằng default/baseline mới từ server.
-- Keystroke chỉ cập nhật local state. Giá trị chỉ đi lên server qua future action payload contract được version/capability-gate ở boundary như debounce, blur hoặc submit; Foundation 0.1 chưa có payload này.
-- Clear sau acknowledgement đã được đặc tả cần được app gọi rõ ràng; protocol hiện không coi full response là acknowledgement hoặc reset.
+- Keystroke chỉ cập nhật local state. Giá trị chỉ đi lên server một lần tại boundary `SubmitTextFields` typed/capability-gated; debounce, blur và những payload khác chưa có contract.
+- `LuaScreenSession.accept(...)` không coi bất kỳ full response nào là acknowledgement hoặc reset. Chỉ `complete(preparedAction, AcknowledgedScreen)` có thể settle draft: acknowledgement phải khớp exact submission ID/node order/revision với snapshot, cùng session lifetime; local slot generation, revision và value vẫn phải khớp để ack chậm không overwrite keystroke mới. Baseline chuẩn hóa lấy từ `initialValue` của replacement screen.
 
 ### Expanded/selection — chưa hiện thực
 
@@ -90,16 +90,16 @@ Gesture và animation thuộc Compose renderer, không phải durable StateStore
 
 - Không dùng generic `Map<NodeId, Any?>`, Compose object hay shared mutable global state. API implementation phải typed, immutable-at-publication và KMP-safe.
 - Stateful component có dữ liệu nhạy cảm phải có explicit local retention policy; raw value không được persist/log/telemetry và phải clear đúng boundary.
-- Slice hiện không truncate local draft: giới hạn UX/semantic theo field chưa có protocol contract. Không dùng nó cho input có kích thước không bị kiểm soát; một cap/validation per-field cần ADR/spec riêng trước production use.
+- Slice không truncate local draft khi gõ. `SubmitTextFields` giới hạn request ở 32 fields, mỗi raw value tối đa 4.096 ký tự; giới hạn UX/semantic riêng theo field vẫn cần contract trước production use.
 - Server-authoritative reset, remote focus, `UpdateState`, retention metadata hoặc forced overwrite cần wire contract versioned, capability negotiation và security review riêng.
-- Patch/revision/realtime conflict, stale response ordering, action cancellation/acknowledgement, offline persistence/encryption và multi-device sync không được suy đoán từ Phase 3.
+- Patch/revision/realtime conflict, global stale-response ordering, action cancellation/retry/idempotency, offline persistence/encryption và multi-device sync không được suy đoán từ Phase 3/4. Guard acknowledgement chỉ bảo vệ settlement local cho snapshot TextField đã chuẩn bị.
 
 ## Evidence kiểm thử
 
-- `LuaScreenSessionTest` kiểm tra draft dirty/pristine, baseline mới, node move, type change/remove prune, non-revival, loading/failure/incompatible, invalid/cross-screen response, reset và session mới.
-- `DashboardHttpIntegrationTest` đưa HTTP load, local edit và full `Submit` replacement qua cùng session, đồng thời kiểm tra client Foundation-only nhận `Incompatible(component.text_field@1)`.
-- Core/Proto3 tests kiểm tra capability, validation limits, JSON/Proto mapping, field tag `5`; runtime tests đi qua validation, NodeStore candidate và session reconciliation của TextField.
+- `LuaScreenSessionTest` kiểm tra draft dirty/pristine, baseline mới, node move, type change/remove prune, non-revival, loading/failure/incompatible, invalid/cross-screen response, reset/session mới, normalized acknowledgement, edit-after-submit và replay/session-boundary safety.
+- `DashboardHttpIntegrationTest` đưa HTTP load, local edit, legacy `Submit` replacement giữ dirty draft, và typed Product filter được normalize/settle qua acknowledgement. Client thiếu capability bị `Incompatible` trước render.
+- Core/Proto3 tests kiểm tra capability, submission/ack limits, JSON legacy/new mapping và Proto3 tags append-only; runtime tests đi qua validation, NodeStore candidate, reconciliation và local settlement của TextField.
 
 ## Evolution boundary
 
-`TextField` hiện chỉ là vertical slice experimental. Expanded/selection, focus/scroll semantic hint, action acknowledgement/reset, stateful payload, patch/revision conflict, stale-response ordering, offline persistence/encryption và multi-device sync vẫn cần spec/ADR riêng. Xem [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md) và [câu hỏi mở](../architecture/open-questions.md#offline--local-edits).
+`TextField` vẫn là vertical slice experimental. Expanded/selection, focus/scroll semantic hint, payload cho field khác, partial acknowledgement/inline errors, patch/revision conflict, global stale-response ordering, retry/idempotency, offline persistence/encryption và multi-device sync vẫn cần spec/ADR riêng. Xem [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md), [ADR-0012](../adr/0012-textfield-submission-acknowledgement-vertical-slice.md) và [câu hỏi mở](../architecture/open-questions.md#offline--local-edits).

@@ -47,7 +47,7 @@ message ButtonNode {
 }
 
 // The server provides only the initial baseline. The mutable draft stays client-owned and is
-// intentionally absent from ActionRequest in this vertical slice.
+// absent from legacy Submit; the capability-gated typed submit extension carries one snapshot.
 message TextFieldNode {
   string label = 1;
   string initial_value = 2;
@@ -58,10 +58,16 @@ message Action {
 
   oneof kind {
     SubmitAction submit = 2;
+    SubmitTextFieldsAction submit_text_fields = 3;
   }
 }
 
 message SubmitAction {}
+
+// Declares the exact client-owned TextField drafts that a button may submit together.
+message SubmitTextFieldsAction {
+  repeated string text_field_node_ids = 1;
+}
 
 message ScreenRequest {
   string screen_id = 1;
@@ -73,6 +79,20 @@ message ActionRequest {
   string source_node_id = 2;
   string action_id = 3;
   repeated Capability client_capabilities = 4;
+  TextFieldSubmission text_field_submission = 5;
+}
+
+// Typed, client-generated snapshot for one SubmitTextFields invocation. This is deliberately
+// not a generic key/value payload and not an idempotency credential.
+message TextFieldSubmission {
+  string submission_id = 1;
+  repeated SubmittedTextField fields = 2;
+}
+
+message SubmittedTextField {
+  string node_id = 1;
+  string value = 2;
+  int64 draft_revision = 3;
 }
 
 message ScreenResponse {
@@ -91,7 +111,24 @@ message ActionResponse {
   oneof result {
     Screen screen = 1;
     LuaError failure = 2;
+    AcknowledgedScreen acknowledged_screen = 3;
   }
+}
+
+// A full replacement whose baseline explicitly settles a matching TextField submission.
+message AcknowledgedScreen {
+  Screen screen = 1;
+  TextFieldAcknowledgement acknowledgement = 2;
+}
+
+message TextFieldAcknowledgement {
+  string submission_id = 1;
+  repeated AcknowledgedTextField fields = 2;
+}
+
+message AcknowledgedTextField {
+  string node_id = 1;
+  int64 draft_revision = 2;
 }
 
 message LuaError {

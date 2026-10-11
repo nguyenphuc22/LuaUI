@@ -1,16 +1,16 @@
 # Câu hỏi mở trước khi mở rộng implementation
 
-> **Status:** Open
+> **Status:** Open — đã cập nhật sau vertical slice acknowledgement TextField Phase 4
 >
 > **Mục đích:** Những mục này không phủ nhận Blueprint v1. Chúng là chi tiết contract cần được chốt bằng spec hoặc ADR trước khi trở thành public API.
 
 ## Stable ID & patch
 
 - Foundation 0.1 chốt ID explicit và unique trong một screen. Sau 0.1, ai sinh ID (Server DSL, domain hay client helper), scope cross-screen/session và lifecycle khi node di chuyển/đổi tên/xóa là gì?
-- Runtime 0.2 Phase 1 đã có NodeStore snapshot/index theo scope một screen, Phase 2 có ScreenStore full-response lifecycle, và Phase 3 có TextField draft reconciliation experimental. Revision, action response ordering, stale-response discard và mutation policy cho patch vẫn chưa được chốt.
+- Runtime 0.2 Phase 1 đã có NodeStore snapshot/index theo scope một screen, Phase 2 có ScreenStore full-response lifecycle, Phase 3 có TextField draft reconciliation, và Phase 4 có acknowledgement hẹp cho một snapshot TextField. Phase 4 không thiết lập revision/order toàn cục, stale-response discard hay mutation policy cho patch.
 - Patch có `revision`/`baseRevision` không? Xử lý duplicate, out-of-order, replay và retry thế nào?
 - `Batch` có atomic không? Partial failure báo thế nào và tree có rollback không?
-- [ADR-0010](../adr/0010-local-ui-state-ownership-and-reconciliation.md) chốt retain/prune local state cho full-screen replacement; [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md) hiện thực policy đó cho draft TextField. Patch conflict với dirty draft/focus/scroll, revision và batch rollback vẫn cần policy riêng.
+- [ADR-0010](../adr/0010-local-ui-state-ownership-and-reconciliation.md) chốt retain/prune local state cho full-screen replacement; [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md) hiện thực policy đó cho draft TextField; [ADR-0012](../adr/0012-textfield-submission-acknowledgement-vertical-slice.md) chốt acknowledgement TextField không có partial acceptance và settlement theo freshness của từng draft. Patch conflict với dirty draft/focus/scroll, revision và batch rollback vẫn cần policy riêng.
 
 ## Schema & wire format
 
@@ -30,8 +30,8 @@
 
 - Type system, null semantics, locale/date behavior, overflow/divide-by-zero và dependency tracking của expression là gì?
 - Có giới hạn complexity/depth/evaluation budget nào?
-- Action network retry, cancellation, optimistic state, progress và idempotency được mô hình hoá thế nào?
-- Action acknowledgement/correlation nào cho phép clear hoặc merge local draft một cách rõ ràng, thay vì coi full response là reset?
+- Phase 4 chốt acknowledgement không có partial acceptance chỉ cho `SubmitTextFields`. Contract nào cho field/action khác, partial acceptance, inline field error, remote forced overwrite hoặc merge local draft?
+- Action network retry, cancellation, optimistic state, progress, global response ordering và idempotency được mô hình hoá thế nào? `LuaSubmissionId` của Phase 4 không phải idempotency key hay replay protection ở protocol/server; runtime chỉ consume một `LuaPreparedAction` sau acknowledgement hợp lệ để không áp dụng lại replacement cục bộ.
 - `OpenUrl`/deep link sử dụng route grammar và trust policy nào?
 
 ## Offline & local edits

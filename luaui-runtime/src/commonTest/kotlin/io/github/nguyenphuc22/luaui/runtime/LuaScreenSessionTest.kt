@@ -1,20 +1,30 @@
 package io.github.nguyenphuc22.luaui.runtime
 
 import io.github.nguyenphuc22.luaui.core.LuaActionResponse
+import io.github.nguyenphuc22.luaui.core.LuaAcknowledgedTextField
+import io.github.nguyenphuc22.luaui.core.LuaAction
+import io.github.nguyenphuc22.luaui.core.LuaActionId
+import io.github.nguyenphuc22.luaui.core.LuaButtonNode
 import io.github.nguyenphuc22.luaui.core.LuaCapabilities
 import io.github.nguyenphuc22.luaui.core.LuaColumnNode
 import io.github.nguyenphuc22.luaui.core.LuaError
 import io.github.nguyenphuc22.luaui.core.LuaErrorCode
 import io.github.nguyenphuc22.luaui.core.LuaNode
 import io.github.nguyenphuc22.luaui.core.LuaNodeId
+import io.github.nguyenphuc22.luaui.core.LuaProtocolLimits
 import io.github.nguyenphuc22.luaui.core.LuaScreen
 import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenResponse
+import io.github.nguyenphuc22.luaui.core.LuaSubmissionId
+import io.github.nguyenphuc22.luaui.core.LuaSubmittedTextField
+import io.github.nguyenphuc22.luaui.core.LuaTextFieldAcknowledgement
 import io.github.nguyenphuc22.luaui.core.LuaTextFieldNode
 import io.github.nguyenphuc22.luaui.core.LuaTextNode
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -155,6 +165,19 @@ class LuaScreenSessionTest {
     }
 
     @Test
+    fun `reset materializes fresh TextField slots for a ready screen`() {
+        val edited = readyFormSession(initialValue = "all")
+            .updateTextField(LuaNodeId("dashboard.filter"), "rice")
+
+        val reset = edited.resetLocalState()
+        val draft = reset.localStateStore.draftFor(filter(reset))
+
+        assertEquals("all", draft.value)
+        assertTrue(!draft.isDirty)
+        assertTrue(draft.slotGeneration > 0)
+    }
+
+    @Test
     fun `editing back to the baseline is pristine and unsupported IDs are no-ops`() {
         val initial = readySession(screen = dashboard(initialValue = "all"))
         val edited = initial.updateTextField(filter(initial).id, "rice")
@@ -170,15 +193,330 @@ class LuaScreenSessionTest {
         assertSame(restored, nonTextField)
     }
 
+    @Test
+    fun `matching acknowledged submission settles a normalized TextField baseline`() {
+        val initial = readyFormSession(initialValue = "all")
+        val edited = initial.updateTextField(filter(initial).id, " rice ")
+        val action = applyAction(edited)
+        val prepared = assertIs<LuaPreparedAction>(
+            edited.prepareAction(
+                sourceNodeId = LuaNodeId("dashboard.apply"),
+                action = action,
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+            ),
+        )
+        val submitted = requireNotNull(prepared.request.textFieldSubmission)
+
+        assertEquals(" rice ", submitted.fields.single().value)
+        assertEquals(1, submitted.fields.single().draftRevision)
+
+        val settled = edited.complete(
+            prepared,
+            acknowledgedResponse(
+                screen = formDashboard(initialValue = "rice"),
+                submissionId = submitted.submissionId,
+                draftRevision = submitted.fields.single().draftRevision,
+            ),
+        )
+        val draft = settled.localStateStore.draftFor(filter(settled))
+
+        assertEquals("rice", draft.value)
+        assertEquals("rice", draft.serverBaseline)
+        assertEquals(1, draft.draftRevision)
+        assertTrue(!draft.isDirty)
+    }
+
+    @Test
+    fun `late acknowledged submission never overwrites a newer local edit`() {
+        val initial = readyFormSession(initialValue = "all")
+        val submittedSession = initial.updateTextField(filter(initial).id, "rice")
+        val action = applyAction(submittedSession)
+        val prepared = assertIs<LuaPreparedAction>(
+            submittedSession.prepareAction(
+                sourceNodeId = LuaNodeId("dashboard.apply"),
+                action = action,
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+            ),
+        )
+        val submitted = requireNotNull(prepared.request.textFieldSubmission)
+        val newerEdit = submittedSession.updateTextField(filter(submittedSession).id, "corn")
+
+        val completed = newerEdit.complete(
+            prepared,
+            acknowledgedResponse(
+                screen = formDashboard(initialValue = "rice"),
+                submissionId = submitted.submissionId,
+                draftRevision = submitted.fields.single().draftRevision,
+            ),
+        )
+        val draft = completed.localStateStore.draftFor(filter(completed))
+
+        assertEquals("corn", draft.value)
+        assertEquals("rice", draft.serverBaseline)
+        assertEquals(2, draft.draftRevision)
+        assertTrue(draft.isDirty)
+    }
+
+    @Test
+    fun `matching acknowledgement settles each unchanged draft independently`() {
+        val initial = readyTwoFieldFormSession(firstInitialValue = "all", secondInitialValue = "all")
+        val submittedSession = initial
+            .updateTextField(filter(initial).id, "rice")
+            .updateTextField(secondaryFilter(initial).id, "corn")
+        val prepared = assertIs<LuaPreparedAction>(
+            submittedSession.prepareAction(
+                sourceNodeId = LuaNodeId("dashboard.apply"),
+                action = applyAction(submittedSession),
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+            ),
+        )
+        val submitted = requireNotNull(prepared.request.textFieldSubmission)
+        val editedAfterSubmit = submittedSession.updateTextField(filter(submittedSession).id, "wheat")
+
+        val completed = editedAfterSubmit.complete(
+            prepared,
+            LuaActionResponse.AcknowledgedScreen(
+                screen = twoFieldFormDashboard(
+                    firstInitialValue = "rice-normalized",
+                    secondInitialValue = "corn-normalized",
+                ),
+                acknowledgement = LuaTextFieldAcknowledgement(
+                    submissionId = submitted.submissionId,
+                    fields = submitted.fields.map { field ->
+                        LuaAcknowledgedTextField(field.nodeId, field.draftRevision)
+                    },
+                ),
+            ),
+        )
+        val firstDraft = completed.localStateStore.draftFor(filter(completed))
+        val secondDraft = completed.localStateStore.draftFor(secondaryFilter(completed))
+
+        assertEquals("wheat", firstDraft.value)
+        assertEquals("rice-normalized", firstDraft.serverBaseline)
+        assertTrue(firstDraft.isDirty)
+        assertEquals("corn-normalized", secondDraft.value)
+        assertEquals("corn-normalized", secondDraft.serverBaseline)
+        assertTrue(!secondDraft.isDirty)
+    }
+
+    @Test
+    fun `unknown acknowledgement and a new local-state lifetime are ignored safely`() {
+        val initial = readyFormSession(initialValue = "all")
+        val edited = initial.updateTextField(filter(initial).id, "rice")
+        val prepared = assertIs<LuaPreparedAction>(
+            edited.prepareAction(
+                sourceNodeId = LuaNodeId("dashboard.apply"),
+                action = applyAction(edited),
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+            ),
+        )
+        val submitted = requireNotNull(prepared.request.textFieldSubmission)
+        val wrongAcknowledgement = acknowledgedResponse(
+            screen = formDashboard(initialValue = "rice"),
+            submissionId = LuaSubmissionId("dashboard.submit.other"),
+            draftRevision = submitted.fields.single().draftRevision,
+        )
+
+        assertSame(edited, edited.complete(prepared, wrongAcknowledgement))
+        assertSame(
+            edited,
+            edited.complete(
+                prepared,
+                acknowledgedResponse(
+                    screen = formDashboard(initialValue = "rice"),
+                    submissionId = submitted.submissionId,
+                    draftRevision = submitted.fields.single().draftRevision + 1,
+                ),
+            ),
+        )
+        val reset = edited.resetLocalState()
+        assertSame(
+            reset,
+            reset.complete(
+                prepared,
+                acknowledgedResponse(
+                    screen = formDashboard(initialValue = "rice"),
+                    submissionId = submitted.submissionId,
+                    draftRevision = submitted.fields.single().draftRevision,
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `raw acknowledgement response is not an implicit local reset`() {
+        val initial = readyFormSession(initialValue = "all")
+        val edited = initial.updateTextField(filter(initial).id, "rice")
+        val prepared = assertIs<LuaPreparedAction>(
+            edited.prepareAction(
+                sourceNodeId = LuaNodeId("dashboard.apply"),
+                action = applyAction(edited),
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+            ),
+        )
+        val submitted = requireNotNull(prepared.request.textFieldSubmission)
+
+        val rawAccepted = edited.accept(
+            acknowledgedResponse(
+                screen = formDashboard(initialValue = "rice"),
+                submissionId = submitted.submissionId,
+                draftRevision = submitted.fields.single().draftRevision,
+            ),
+        )
+
+        val draft = rawAccepted.localStateStore.draftFor(filter(rawAccepted))
+        assertEquals("rice", draft.value)
+        assertTrue(draft.isDirty)
+    }
+
+    @Test
+    fun `a prepared acknowledgement is consumed after one valid completion`() {
+        val initial = readyFormSession(initialValue = "all")
+        val edited = initial.updateTextField(filter(initial).id, "rice")
+        val prepared = assertIs<LuaPreparedAction>(
+            edited.prepareAction(
+                sourceNodeId = LuaNodeId("dashboard.apply"),
+                action = applyAction(edited),
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+            ),
+        )
+        val submitted = requireNotNull(prepared.request.textFieldSubmission)
+        val accepted = acknowledgedResponse(
+            screen = formDashboard(initialValue = "rice"),
+            submissionId = submitted.submissionId,
+            draftRevision = submitted.fields.single().draftRevision,
+        )
+        val settled = edited.complete(prepared, accepted)
+
+        val replayed = settled.complete(
+            prepared,
+            acknowledgedResponse(
+                screen = formDashboard(initialValue = "unexpected replay value"),
+                submissionId = submitted.submissionId,
+                draftRevision = submitted.fields.single().draftRevision,
+            ),
+        )
+
+        assertSame(settled, replayed)
+        assertEquals("rice", replayed.localStateStore.draftFor(filter(replayed)).value)
+    }
+
+    @Test
+    fun `prepared submission fields are immutable after snapshot`() {
+        val initial = readyFormSession(initialValue = "all")
+        val edited = initial.updateTextField(filter(initial).id, "rice")
+        val prepared = assertIs<LuaPreparedAction>(
+            edited.prepareAction(
+                sourceNodeId = LuaNodeId("dashboard.apply"),
+                action = applyAction(edited),
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+            ),
+        )
+        val fields = requireNotNull(prepared.request.textFieldSubmission).fields
+
+        assertFails {
+            (fields as MutableList<LuaSubmittedTextField>)[0] = LuaSubmittedTextField(
+                nodeId = LuaNodeId("dashboard.filter"),
+                value = "tampered",
+                draftRevision = 1,
+            )
+        }
+        assertEquals("rice", fields.single().value)
+    }
+
+    @Test
+    fun `prepareAction rejects an invalid submission ID and configured request boundary`() {
+        val initial = readyFormSession(
+            initialValue = "all",
+            limits = LuaProtocolLimits(maxSubmittedTextFieldValueLength = 3),
+        )
+        val edited = initial.updateTextField(filter(initial).id, "rice")
+        val action = applyAction(edited)
+
+        assertNull(
+            edited.prepareAction(
+                sourceNodeId = LuaNodeId("dashboard.apply"),
+                action = action,
+                submissionId = LuaSubmissionId("invalid submission id"),
+            ),
+        )
+        assertNull(
+            edited.prepareAction(
+                sourceNodeId = LuaNodeId("dashboard.apply"),
+                action = action,
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+            ),
+        )
+    }
+
+    @Test
+    fun `acknowledged replacement that removes a field never revives its old draft`() {
+        val initial = readyFormSession(initialValue = "all")
+        val edited = initial.updateTextField(filter(initial).id, "rice")
+        val prepared = assertIs<LuaPreparedAction>(
+            edited.prepareAction(
+                sourceNodeId = LuaNodeId("dashboard.apply"),
+                action = applyAction(edited),
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+            ),
+        )
+        val submitted = requireNotNull(prepared.request.textFieldSubmission)
+
+        val removed = edited.complete(
+            prepared,
+            acknowledgedResponse(
+                screen = dashboard(field = null),
+                submissionId = submitted.submissionId,
+                draftRevision = submitted.fields.single().draftRevision,
+            ),
+        )
+        val reintroduced = removed.accept(LuaScreenResponse.Screen(formDashboard(initialValue = "fresh")))
+        val draft = reintroduced.localStateStore.draftFor(filter(reintroduced))
+
+        assertEquals("fresh", draft.value)
+        assertEquals("fresh", draft.serverBaseline)
+        assertTrue(!draft.isDirty)
+    }
+
     private fun readySession(screen: LuaScreen): LuaScreenSession = LuaScreenSession.loading(
         screenId = LuaScreenId("dashboard"),
         clientCapabilities = LuaCapabilities.foundation + LuaCapabilities.textField,
     ).accept(LuaScreenResponse.Screen(screen))
 
+    private fun readyFormSession(
+        initialValue: String,
+        limits: LuaProtocolLimits = LuaProtocolLimits(),
+    ): LuaScreenSession = LuaScreenSession.loading(
+        screenId = LuaScreenId("dashboard"),
+        clientCapabilities = LuaCapabilities.foundation + setOf(
+            LuaCapabilities.textField,
+            LuaCapabilities.submitTextFields,
+        ),
+        limits = limits,
+    ).accept(LuaScreenResponse.Screen(formDashboard(initialValue)))
+
+    private fun readyTwoFieldFormSession(
+        firstInitialValue: String,
+        secondInitialValue: String,
+    ): LuaScreenSession = LuaScreenSession.loading(
+        screenId = LuaScreenId("dashboard"),
+        clientCapabilities = LuaCapabilities.foundation + setOf(
+            LuaCapabilities.textField,
+            LuaCapabilities.submitTextFields,
+        ),
+    ).accept(LuaScreenResponse.Screen(twoFieldFormDashboard(firstInitialValue, secondInitialValue)))
+
     private fun filter(session: LuaScreenSession): LuaTextFieldNode {
         val ready = assertIs<LuaScreenStoreState.Ready>(session.screenStore.state)
         return assertIs<LuaTextFieldNode>(
             ready.nodeStore.find(LuaNodeId("dashboard.filter"))?.node,
+        )
+    }
+
+    private fun secondaryFilter(session: LuaScreenSession): LuaTextFieldNode {
+        val ready = assertIs<LuaScreenStoreState.Ready>(session.screenStore.state)
+        return assertIs<LuaTextFieldNode>(
+            ready.nodeStore.find(LuaNodeId("dashboard.category"))?.node,
         )
     }
 
@@ -236,4 +574,91 @@ class LuaScreenSessionTest {
             requiredCapabilities = LuaCapabilities.requiredBy(root),
         )
     }
+
+    private fun formDashboard(initialValue: String): LuaScreen {
+        val root = LuaColumnNode(
+            id = LuaNodeId("dashboard.root"),
+            children = listOf(
+                LuaTextFieldNode(
+                    id = LuaNodeId("dashboard.filter"),
+                    label = "Filter",
+                    initialValue = initialValue,
+                ),
+                LuaButtonNode(
+                    id = LuaNodeId("dashboard.apply"),
+                    label = "Apply",
+                    onClick = LuaAction.SubmitTextFields(
+                        actionId = LuaActionId("dashboard.apply"),
+                        textFieldNodeIds = listOf(LuaNodeId("dashboard.filter")),
+                    ),
+                ),
+            ),
+        )
+        return LuaScreen(
+            id = LuaScreenId("dashboard"),
+            root = root,
+            requiredCapabilities = LuaCapabilities.requiredBy(root),
+        )
+    }
+
+    private fun twoFieldFormDashboard(
+        firstInitialValue: String,
+        secondInitialValue: String,
+    ): LuaScreen {
+        val root = LuaColumnNode(
+            id = LuaNodeId("dashboard.root"),
+            children = listOf(
+                LuaTextFieldNode(
+                    id = LuaNodeId("dashboard.filter"),
+                    label = "Filter",
+                    initialValue = firstInitialValue,
+                ),
+                LuaTextFieldNode(
+                    id = LuaNodeId("dashboard.category"),
+                    label = "Category",
+                    initialValue = secondInitialValue,
+                ),
+                LuaButtonNode(
+                    id = LuaNodeId("dashboard.apply"),
+                    label = "Apply",
+                    onClick = LuaAction.SubmitTextFields(
+                        actionId = LuaActionId("dashboard.apply"),
+                        textFieldNodeIds = listOf(
+                            LuaNodeId("dashboard.filter"),
+                            LuaNodeId("dashboard.category"),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        return LuaScreen(
+            id = LuaScreenId("dashboard"),
+            root = root,
+            requiredCapabilities = LuaCapabilities.requiredBy(root),
+        )
+    }
+
+    private fun applyAction(session: LuaScreenSession): LuaAction.SubmitTextFields {
+        val ready = assertIs<LuaScreenStoreState.Ready>(session.screenStore.state)
+        return assertIs<LuaAction.SubmitTextFields>(
+            assertIs<LuaButtonNode>(ready.nodeStore.find(LuaNodeId("dashboard.apply"))?.node).onClick,
+        )
+    }
+
+    private fun acknowledgedResponse(
+        screen: LuaScreen,
+        submissionId: LuaSubmissionId,
+        draftRevision: Long,
+    ): LuaActionResponse.AcknowledgedScreen = LuaActionResponse.AcknowledgedScreen(
+        screen = screen,
+        acknowledgement = LuaTextFieldAcknowledgement(
+            submissionId = submissionId,
+            fields = listOf(
+                LuaAcknowledgedTextField(
+                    nodeId = LuaNodeId("dashboard.filter"),
+                    draftRevision = draftRevision,
+                ),
+            ),
+        ),
+    )
 }

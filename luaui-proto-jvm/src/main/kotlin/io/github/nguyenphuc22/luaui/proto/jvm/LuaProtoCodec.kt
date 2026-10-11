@@ -3,6 +3,7 @@ package io.github.nguyenphuc22.luaui.proto.jvm
 import com.google.protobuf.InvalidProtocolBufferException
 import com.google.protobuf.MessageLite
 import io.github.nguyenphuc22.luaui.core.LUA_MAX_PAYLOAD_BYTES
+import io.github.nguyenphuc22.luaui.core.LuaAcknowledgedTextField
 import io.github.nguyenphuc22.luaui.core.LuaAction
 import io.github.nguyenphuc22.luaui.core.LuaActionId
 import io.github.nguyenphuc22.luaui.core.LuaActionRequest
@@ -20,8 +21,14 @@ import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenRequest
 import io.github.nguyenphuc22.luaui.core.LuaScreenResponse
 import io.github.nguyenphuc22.luaui.core.LuaScreenValidationResult
+import io.github.nguyenphuc22.luaui.core.LuaSubmissionId
+import io.github.nguyenphuc22.luaui.core.LuaSubmittedTextField
+import io.github.nguyenphuc22.luaui.core.LuaTextFieldAcknowledgement
 import io.github.nguyenphuc22.luaui.core.LuaTextFieldNode
+import io.github.nguyenphuc22.luaui.core.LuaTextFieldSubmission
 import io.github.nguyenphuc22.luaui.core.LuaTextNode
+import io.github.nguyenphuc22.luaui.proto.v1.AcknowledgedScreen as ProtoAcknowledgedScreen
+import io.github.nguyenphuc22.luaui.proto.v1.AcknowledgedTextField as ProtoAcknowledgedTextField
 import io.github.nguyenphuc22.luaui.proto.v1.Action as ProtoAction
 import io.github.nguyenphuc22.luaui.proto.v1.ActionRequest as ProtoActionRequest
 import io.github.nguyenphuc22.luaui.proto.v1.ActionResponse as ProtoActionResponse
@@ -36,7 +43,11 @@ import io.github.nguyenphuc22.luaui.proto.v1.Screen as ProtoScreen
 import io.github.nguyenphuc22.luaui.proto.v1.ScreenRequest as ProtoScreenRequest
 import io.github.nguyenphuc22.luaui.proto.v1.ScreenResponse as ProtoScreenResponse
 import io.github.nguyenphuc22.luaui.proto.v1.SubmitAction as ProtoSubmitAction
+import io.github.nguyenphuc22.luaui.proto.v1.SubmitTextFieldsAction as ProtoSubmitTextFieldsAction
+import io.github.nguyenphuc22.luaui.proto.v1.SubmittedTextField as ProtoSubmittedTextField
+import io.github.nguyenphuc22.luaui.proto.v1.TextFieldAcknowledgement as ProtoTextFieldAcknowledgement
 import io.github.nguyenphuc22.luaui.proto.v1.TextFieldNode as ProtoTextFieldNode
+import io.github.nguyenphuc22.luaui.proto.v1.TextFieldSubmission as ProtoTextFieldSubmission
 import io.github.nguyenphuc22.luaui.proto.v1.TextNode as ProtoTextNode
 
 /** Raised when a Proto3 payload cannot be safely represented by the LuaUI core model. */
@@ -196,12 +207,21 @@ fun LuaAction.toProto(): ProtoAction = ProtoAction.newBuilder()
     .apply {
         when (this@toProto) {
             is LuaAction.Submit -> setSubmit(ProtoSubmitAction.getDefaultInstance())
+            is LuaAction.SubmitTextFields -> setSubmitTextFields(
+                ProtoSubmitTextFieldsAction.newBuilder()
+                    .addAllTextFieldNodeIds(this@toProto.textFieldNodeIds.map { id -> id.value })
+                    .build(),
+            )
         }
     }
     .build()
 
 fun ProtoAction.toLuaAction(): LuaAction = when (getKindCase()) {
     ProtoAction.KindCase.SUBMIT -> LuaAction.Submit(LuaActionId(getActionId()))
+    ProtoAction.KindCase.SUBMIT_TEXT_FIELDS -> LuaAction.SubmitTextFields(
+        actionId = LuaActionId(getActionId()),
+        textFieldNodeIds = getSubmitTextFields().getTextFieldNodeIdsList().map(::LuaNodeId),
+    )
     ProtoAction.KindCase.KIND_NOT_SET,
     null,
     -> malformed("Action.kind must be set to a supported variant.")
@@ -229,6 +249,11 @@ fun LuaActionRequest.toProto(): ProtoActionRequest {
         .setSourceNodeId(sourceNodeId.value)
         .setActionId(actionId.value)
         .addAllClientCapabilities(clientCapabilities.sortedForProto().map { it.toProto() })
+        .apply {
+            this@toProto.textFieldSubmission?.let { submission ->
+                setTextFieldSubmission(submission.toProto())
+            }
+        }
         .build()
 }
 
@@ -239,7 +264,59 @@ fun ProtoActionRequest.toLuaActionRequest(): LuaActionRequest = LuaActionRequest
     clientCapabilities = getClientCapabilitiesList().toLuaCapabilities(
         path = "action.clientCapabilities",
     ),
+    textFieldSubmission = if (hasTextFieldSubmission()) {
+        getTextFieldSubmission().toLuaTextFieldSubmission()
+    } else {
+        null
+    },
 ).also { request -> requireValidActionRequest(request, phase = "decode") }
+
+fun LuaTextFieldSubmission.toProto(): ProtoTextFieldSubmission = ProtoTextFieldSubmission.newBuilder()
+    .setSubmissionId(submissionId.value)
+    .addAllFields(fields.map { field -> field.toProto() })
+    .build()
+
+fun ProtoTextFieldSubmission.toLuaTextFieldSubmission(): LuaTextFieldSubmission =
+    LuaTextFieldSubmission(
+        submissionId = LuaSubmissionId(getSubmissionId()),
+        fields = getFieldsList().map { field -> field.toLuaSubmittedTextField() },
+    )
+
+fun LuaSubmittedTextField.toProto(): ProtoSubmittedTextField = ProtoSubmittedTextField.newBuilder()
+    .setNodeId(nodeId.value)
+    .setValue(value)
+    .setDraftRevision(draftRevision)
+    .build()
+
+fun ProtoSubmittedTextField.toLuaSubmittedTextField(): LuaSubmittedTextField = LuaSubmittedTextField(
+    nodeId = LuaNodeId(getNodeId()),
+    value = getValue(),
+    draftRevision = getDraftRevision(),
+)
+
+fun LuaTextFieldAcknowledgement.toProto(): ProtoTextFieldAcknowledgement =
+    ProtoTextFieldAcknowledgement.newBuilder()
+        .setSubmissionId(submissionId.value)
+        .addAllFields(fields.map { field -> field.toProto() })
+        .build()
+
+fun ProtoTextFieldAcknowledgement.toLuaTextFieldAcknowledgement(): LuaTextFieldAcknowledgement =
+    LuaTextFieldAcknowledgement(
+        submissionId = LuaSubmissionId(getSubmissionId()),
+        fields = getFieldsList().map { field -> field.toLuaAcknowledgedTextField() },
+    ).also { acknowledgement -> requireValidTextFieldAcknowledgement(acknowledgement, phase = "decode") }
+
+fun LuaAcknowledgedTextField.toProto(): ProtoAcknowledgedTextField =
+    ProtoAcknowledgedTextField.newBuilder()
+        .setNodeId(nodeId.value)
+        .setDraftRevision(draftRevision)
+        .build()
+
+fun ProtoAcknowledgedTextField.toLuaAcknowledgedTextField(): LuaAcknowledgedTextField =
+    LuaAcknowledgedTextField(
+        nodeId = LuaNodeId(getNodeId()),
+        draftRevision = getDraftRevision(),
+    )
 
 fun LuaScreenResponse.toProto(): ProtoScreenResponse = ProtoScreenResponse.newBuilder()
     .apply {
@@ -274,21 +351,49 @@ fun ProtoScreenResponse.toLuaScreenResponse(): LuaScreenResponse = when (getResu
     -> malformed("ScreenResponse.result must be set to a supported variant.")
 }
 
-fun LuaActionResponse.toProto(): ProtoActionResponse = ProtoActionResponse.newBuilder()
-    .apply {
-        when (this@toProto) {
-            is LuaActionResponse.Screen -> setScreen(this@toProto.screen.toProto())
-            is LuaActionResponse.Failure -> setFailure(this@toProto.error.toProto())
-        }
-    }
-    .build()
+fun LuaActionResponse.toProto(): ProtoActionResponse {
+    requireValidActionResponse(this, phase = "encode")
+    return ProtoActionResponse.newBuilder()
+        .apply {
+            when (this@toProto) {
+                is LuaActionResponse.Screen -> setScreen(this@toProto.screen.toProto())
+                is LuaActionResponse.AcknowledgedScreen -> setAcknowledgedScreen(
+                    ProtoAcknowledgedScreen.newBuilder()
+                        .setScreen(this@toProto.screen.toProto())
+                        .setAcknowledgement(this@toProto.acknowledgement.toProto())
+                        .build(),
+                )
 
-fun ProtoActionResponse.toLuaActionResponse(): LuaActionResponse = when (getResultCase()) {
-    ProtoActionResponse.ResultCase.SCREEN -> LuaActionResponse.Screen(getScreen().toLuaScreen())
-    ProtoActionResponse.ResultCase.FAILURE -> LuaActionResponse.Failure(getFailure().toLuaError())
-    ProtoActionResponse.ResultCase.RESULT_NOT_SET,
-    null,
-    -> malformed("ActionResponse.result must be set to a supported variant.")
+                is LuaActionResponse.Failure -> setFailure(this@toProto.error.toProto())
+            }
+        }
+        .build()
+}
+
+fun ProtoActionResponse.toLuaActionResponse(): LuaActionResponse {
+    val response = when (getResultCase()) {
+        ProtoActionResponse.ResultCase.SCREEN -> LuaActionResponse.Screen(getScreen().toLuaScreen())
+        ProtoActionResponse.ResultCase.ACKNOWLEDGED_SCREEN -> {
+            val acknowledgedScreen = getAcknowledgedScreen()
+            if (!acknowledgedScreen.hasScreen()) {
+                malformed("AcknowledgedScreen.screen must be present.")
+            }
+            if (!acknowledgedScreen.hasAcknowledgement()) {
+                malformed("AcknowledgedScreen.acknowledgement must be present.")
+            }
+            LuaActionResponse.AcknowledgedScreen(
+                screen = acknowledgedScreen.getScreen().toLuaScreen(),
+                acknowledgement = acknowledgedScreen.getAcknowledgement().toLuaTextFieldAcknowledgement(),
+            )
+        }
+
+        ProtoActionResponse.ResultCase.FAILURE -> LuaActionResponse.Failure(getFailure().toLuaError())
+        ProtoActionResponse.ResultCase.RESULT_NOT_SET,
+        null,
+        -> malformed("ActionResponse.result must be set to a supported variant.")
+    }
+    requireValidActionResponse(response, phase = "decode")
+    return response
 }
 
 fun LuaCapability.toProto(): ProtoCapability = ProtoCapability.newBuilder()
@@ -369,6 +474,21 @@ private fun requireValidScreenRequest(request: LuaScreenRequest, phase: String) 
 private fun requireValidActionRequest(request: LuaActionRequest, phase: String) {
     if (LuaProtocolValidator.validateActionRequest(request).isNotEmpty()) {
         throw LuaProtoDecodingException("Cannot $phase an invalid LuaUI action request as Proto3.")
+    }
+}
+
+private fun requireValidTextFieldAcknowledgement(
+    acknowledgement: LuaTextFieldAcknowledgement,
+    phase: String,
+) {
+    if (LuaProtocolValidator.validateTextFieldAcknowledgement(acknowledgement).isNotEmpty()) {
+        throw LuaProtoDecodingException("Cannot $phase an invalid LuaUI TextField acknowledgement as Proto3.")
+    }
+}
+
+private fun requireValidActionResponse(response: LuaActionResponse, phase: String) {
+    if (LuaProtocolValidator.validateActionResponse(response).isNotEmpty()) {
+        throw LuaProtoDecodingException("Cannot $phase an invalid LuaUI action response as Proto3.")
     }
 }
 

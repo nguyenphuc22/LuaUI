@@ -163,6 +163,10 @@ class LuaNodeStore private constructor(
 
         private fun snapshotAction(action: LuaAction): LuaAction = when (action) {
             is LuaAction.Submit -> LuaAction.Submit(action.actionId)
+            is LuaAction.SubmitTextFields -> LuaAction.SubmitTextFields(
+                actionId = action.actionId,
+                textFieldNodeIds = ImmutableList(action.textFieldNodeIds),
+            )
         }
     }
 }

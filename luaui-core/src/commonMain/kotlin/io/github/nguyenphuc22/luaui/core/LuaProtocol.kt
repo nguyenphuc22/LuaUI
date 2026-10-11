@@ -1,5 +1,6 @@
 package io.github.nguyenphuc22.luaui.core
 
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -23,6 +24,8 @@ object LuaCapabilities {
      */
     val textField = LuaCapability(name = "component.text_field", version = 1)
     val submit = LuaCapability(name = "action.submit", version = 1)
+    /** Experimental action capability for the typed TextField submission/acknowledgement slice. */
+    val submitTextFields = LuaCapability(name = "action.submit_text_fields", version = 1)
 
     val foundation: Set<LuaCapability> = setOf(column, text, button, submit)
 
@@ -54,6 +57,7 @@ object LuaCapabilities {
 
     fun requiredBy(action: LuaAction): Set<LuaCapability> = when (action) {
         is LuaAction.Submit -> setOf(submit)
+        is LuaAction.SubmitTextFields -> setOf(submitTextFields)
     }
 }
 
@@ -116,7 +120,54 @@ sealed interface LuaAction {
     data class Submit(
         override val actionId: LuaActionId,
     ) : LuaAction
+
+    /**
+     * Declares the exact TextField nodes whose client-owned drafts may be submitted together.
+     *
+     * The action definition contains only an allowlist; values and draft revisions travel in the
+     * typed [LuaTextFieldSubmission] request field, never in the screen definition.
+     */
+    @Serializable
+    @SerialName("submit_text_fields")
+    data class SubmitTextFields(
+        override val actionId: LuaActionId,
+        val textFieldNodeIds: List<LuaNodeId>,
+    ) : LuaAction
 }
+
+/** A typed, all-or-nothing snapshot for one [LuaAction.SubmitTextFields] invocation. */
+@Serializable
+data class LuaTextFieldSubmission(
+    val submissionId: LuaSubmissionId,
+    val fields: List<LuaSubmittedTextField>,
+)
+
+/** One client-owned TextField value and its local draft revision at submit time. */
+@Serializable
+data class LuaSubmittedTextField(
+    val nodeId: LuaNodeId,
+    val value: String,
+    val draftRevision: Long,
+)
+
+/**
+ * Server acknowledgement for a [LuaTextFieldSubmission].
+ *
+ * It echoes only node IDs and revisions. The associated [LuaActionResponse.AcknowledgedScreen]
+ * carries the authoritative, potentially normalized baseline in its full screen replacement.
+ */
+@Serializable
+data class LuaTextFieldAcknowledgement(
+    val submissionId: LuaSubmissionId,
+    val fields: List<LuaAcknowledgedTextField>,
+)
+
+/** An accepted field from a submission; values are deliberately not echoed a second time. */
+@Serializable
+data class LuaAcknowledgedTextField(
+    val nodeId: LuaNodeId,
+    val draftRevision: Long,
+)
 
 @Serializable
 data class LuaScreenRequest(
@@ -130,6 +181,12 @@ data class LuaActionRequest(
     val sourceNodeId: LuaNodeId,
     val actionId: LuaActionId,
     val clientCapabilities: Set<LuaCapability>,
+    /**
+     * Absent for legacy [LuaAction.Submit]. `NEVER` preserves the strict legacy JSON shape for
+     * Foundation clients/servers that do not know this experimental extension.
+     */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val textFieldSubmission: LuaTextFieldSubmission? = null,
 )
 
 @Serializable
@@ -159,6 +216,17 @@ sealed interface LuaActionResponse {
     @SerialName("screen")
     data class Screen(
         val screen: LuaScreen,
+    ) : LuaActionResponse
+
+    /**
+     * A full replacement plus an explicit acknowledgement of one typed TextField submission.
+     * A plain [Screen] is never an implicit acknowledgement or reset command.
+     */
+    @Serializable
+    @SerialName("acknowledged_screen")
+    data class AcknowledgedScreen(
+        val screen: LuaScreen,
+        val acknowledgement: LuaTextFieldAcknowledgement,
     ) : LuaActionResponse
 
     @Serializable

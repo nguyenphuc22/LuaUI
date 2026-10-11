@@ -7,8 +7,8 @@
 | Vai trò | Lộ trình đọc |
 | --- | --- |
 | Product/tech lead | [Architecture overview](architecture/README.md) → [Roadmap](roadmap.md) → [Open questions](architecture/open-questions.md) |
-| Client engineer | [Runtime & rendering](architecture/runtime.md) → [LocalStateStore 0.2](specs/runtime-local-state-store-0.2.md) → [Protocol](architecture/protocol.md) |
-| Server engineer | [Platform & integration](architecture/platform.md) → [Protocol](architecture/protocol.md) → [Runtime & rendering](architecture/runtime.md) |
+| Client engineer | [Runtime & rendering](architecture/runtime.md) → [LocalStateStore 0.2](specs/runtime-local-state-store-0.2.md) → [TextField Submission 0.2](specs/runtime-text-field-submission-0.2.md) → [Protocol](architecture/protocol.md) |
+| Server engineer | [Platform & integration](architecture/platform.md) → [Protocol](architecture/protocol.md) → [TextField Submission 0.2](specs/runtime-text-field-submission-0.2.md) → [Runtime & rendering](architecture/runtime.md) |
 | Framework maintainer | [ADR index](adr/README.md) → toàn bộ `architecture/` → [Contributing](../CONTRIBUTING.md) |
 | Người muốn chạy sample | [Foundation 0.1](guides/foundation-0.1.md) → [Protocol 0.1](specs/protocol-0.1.md) |
 
@@ -29,7 +29,8 @@ docs/
 │   ├── protobuf-0.1.md            # Proto3 canonical compatibility spike
 │   ├── runtime-node-store-0.2.md  # Runtime snapshot/index Phase 1
 │   ├── runtime-screen-store-0.2.md # Runtime lifecycle snapshot Phase 2
-│   └── runtime-local-state-store-0.2.md # Runtime TextField/local-state Phase 3
+│   ├── runtime-local-state-store-0.2.md # Runtime TextField/local-state Phase 3
+│   └── runtime-text-field-submission-0.2.md # Typed submit/ack TextField Phase 4
 ├── guides/
 │   └── foundation-0.1.md          # Cách chạy và phạm vi vertical slice
 ├── reference/
