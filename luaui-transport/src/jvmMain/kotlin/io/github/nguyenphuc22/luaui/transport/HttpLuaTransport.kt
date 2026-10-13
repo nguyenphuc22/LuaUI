@@ -109,20 +109,17 @@ class HttpLuaTransport(
 
     private fun LuaActionResponse.validatedFor(
         clientCapabilities: Set<io.github.nguyenphuc22.luaui.core.LuaCapability>,
-    ): LuaActionResponse = when (this) {
-        is LuaActionResponse.Screen -> when (
-            LuaProtocolValidator.validateScreen(screen, clientCapabilities)
-        ) {
-            is LuaScreenValidationResult.Valid -> this
-            is LuaScreenValidationResult.Invalid -> LuaActionResponse.Failure(
-                LuaError(
-                    code = LuaErrorCode.INVALID_SCREEN,
-                    message = "Received an invalid or incompatible LuaUI screen.",
-                ),
-            )
-        }
-
-        is LuaActionResponse.Failure -> this
+    ): LuaActionResponse = if (
+        LuaProtocolValidator.validateActionResponse(this, clientCapabilities).isEmpty()
+    ) {
+        this
+    } else {
+        LuaActionResponse.Failure(
+            LuaError(
+                code = LuaErrorCode.INVALID_SCREEN,
+                message = "Received an invalid or incompatible LuaUI action response.",
+            ),
+        )
     }
 
     private companion object {

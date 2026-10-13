@@ -1,6 +1,6 @@
 # Lộ trình LuaUI
 
-> **Status:** Foundation 0.1 reference baseline, Runtime 0.2 NodeStore Phase 1, ScreenStore Phase 2 và TextField/LocalStateStore Phase 3 experimental đã hiện thực
+> **Status:** Foundation 0.1 reference baseline, Runtime 0.2 NodeStore Phase 1, ScreenStore Phase 2, TextField/LocalStateStore Phase 3 và TextField submission/acknowledgement Phase 4 experimental đã hiện thực
 >
 > Đây là thứ tự hiện thực theo Architecture Blueprint v1, không phải cam kết ngày phát hành hoặc danh sách tính năng đã sẵn sàng.
 
@@ -33,7 +33,8 @@ Contract thực thi đầu tiên được chốt tại [Protocol 0.1](specs/prot
 
 - **Phase 1 đã hiện thực:** NodeStore bất biến, screen-scoped và full-screen snapshot/index; xem [NodeStore 0.2](specs/runtime-node-store-0.2.md).
 - **Phase 2 đã hiện thực:** ScreenStore bất biến cho loading/ready/incompatible/failure và full-screen replacement; xem [ScreenStore 0.2](specs/runtime-screen-store-0.2.md).
-- **Phase 3 đã hiện thực một vertical slice experimental:** `LuaLocalStateStore` screen-session scoped, typed `TextField` draft và `LuaScreenSession` reconciliation. Focus/scroll, expanded state, action payload/acknowledgement và persistence vẫn planned; xem [LocalStateStore 0.2](specs/runtime-local-state-store-0.2.md).
+- **Phase 3 đã hiện thực một vertical slice experimental:** `LuaLocalStateStore` screen-session scoped, typed `TextField` draft và `LuaScreenSession` reconciliation. Focus/scroll, expanded state và persistence vẫn planned; xem [LocalStateStore 0.2](specs/runtime-local-state-store-0.2.md).
+- **Phase 4 đã hiện thực một vertical slice experimental hẹp:** `SubmitTextFields` capability-gated snapshot các `TextField` được allowlist và `AcknowledgedScreen` acknowledgement không có partial acceptance qua `LuaScreenSession.prepareAction`/`complete`. Sau khi acknowledgement khớp toàn bộ snapshot, runtime chỉ settle từng draft còn khớp snapshot local riêng. `Submit@1` vẫn identifiers-only; global response ordering, retry/idempotency, partial acknowledgement cho contract khác và action payload cho field/action khác vẫn Open. Xem [TextField Submission 0.2](specs/runtime-text-field-submission-0.2.md).
 - navigation, expressions và design tokens;
 - cache + error boundary;
 - Inspector cơ bản;

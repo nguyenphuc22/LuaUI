@@ -15,16 +15,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import io.github.nguyenphuc22.luaui.compose.LuaScreenHost
+import io.github.nguyenphuc22.luaui.core.LuaAction
 import io.github.nguyenphuc22.luaui.core.LuaCapabilities
 import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenRequest
+import io.github.nguyenphuc22.luaui.core.LuaSubmissionId
 import io.github.nguyenphuc22.luaui.material3.generated.Material3GeneratedRendererDispatcher
 import io.github.nguyenphuc22.luaui.runtime.LuaScreenSession
 import io.github.nguyenphuc22.luaui.runtime.LuaScreenStoreState
 import io.github.nguyenphuc22.luaui.transport.HttpLuaTransport
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.launch
 
-private val dashboardClientCapabilities = LuaCapabilities.foundation + LuaCapabilities.textField
+private val dashboardClientCapabilities = LuaCapabilities.foundation + setOf(
+    LuaCapabilities.textField,
+    LuaCapabilities.submitTextFields,
+)
 
 fun main() {
     val server = startDashboardServer()
@@ -32,6 +38,8 @@ fun main() {
     application {
         val transport = remember { HttpLuaTransport("http://127.0.0.1:8080") }
         val coroutineScope = rememberCoroutineScope()
+        val submissionSequence = remember { AtomicLong(0L) }
+        var textFieldSubmissionInFlight by remember { mutableStateOf(false) }
         var screenSession by remember {
             mutableStateOf(
                 LuaScreenSession.loading(
@@ -70,18 +78,30 @@ fun main() {
                             onTextFieldValueChange = { nodeId, value ->
                                 screenSession = screenSession.updateTextField(nodeId, value)
                             },
-                            onAction = { nodeId, action ->
+                            onAction = actionHandler@{ nodeId, action ->
+                                val isTextFieldSubmission = action is LuaAction.SubmitTextFields
+                                if (isTextFieldSubmission && textFieldSubmissionInFlight) {
+                                    return@actionHandler
+                                }
+                                val preparedAction = screenSession.prepareAction(
+                                    sourceNodeId = nodeId,
+                                    action = action,
+                                    submissionId = if (isTextFieldSubmission) {
+                                        LuaSubmissionId(
+                                            "dashboard.submit.${submissionSequence.incrementAndGet()}",
+                                        )
+                                    } else {
+                                        null
+                                    },
+                                ) ?: return@actionHandler
+                                if (isTextFieldSubmission) textFieldSubmissionInFlight = true
                                 coroutineScope.launch {
-                                    screenSession = screenSession.accept(
-                                        transport.dispatchAction(
-                                            request = io.github.nguyenphuc22.luaui.core.LuaActionRequest(
-                                                screenId = current.nodeStore.screenId,
-                                                sourceNodeId = nodeId,
-                                                actionId = action.actionId,
-                                                clientCapabilities = dashboardClientCapabilities,
-                                            ),
-                                        ),
-                                    )
+                                    try {
+                                        val response = transport.dispatchAction(preparedAction.request)
+                                        screenSession = screenSession.complete(preparedAction, response)
+                                    } finally {
+                                        if (isTextFieldSubmission) textFieldSubmissionInFlight = false
+                                    }
                                 }
                             },
                         )

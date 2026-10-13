@@ -23,7 +23,7 @@ LuaScreen
 
 `LuaNode` luôn có `id` và exactly one typed content, ví dụ `TextNode`, `ButtonNode`, `ColumnNode`, `LazyListNode` hoặc `CustomNode`. Baseline component set, field shape và wire field number chưa được công bố; ví dụ trên chỉ mô tả ranh giới contract.
 
-Implementation hiện có một extension hẹp: `LuaTextFieldNode(id, label, initialValue)` chỉ được gửi khi client công bố `component.text_field@1`. `initialValue` là baseline server; live draft không thuộc `LuaNode`, không nằm trong action request và được runtime giữ local. Xem [Protocol 0.1](../specs/protocol-0.1.md) và [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md).
+Implementation hiện có một extension hẹp: `LuaTextFieldNode(id, label, initialValue)` chỉ được gửi khi client công bố `component.text_field@1`. `initialValue` là baseline server; live draft không thuộc `LuaNode` và được runtime giữ local. `Submit@1` legacy vẫn không mang draft. Riêng `SubmitTextFields`, sau capability `action.submit_text_fields@1`, có thể mang một typed submission theo exact allowlist của action; thành công dùng `AcknowledgedScreen` để correlate snapshot, còn giá trị chuẩn hoá chỉ quay lại qua `initialValue` của full replacement screen. Xem [Protocol 0.1](../specs/protocol-0.1.md), [TextField Submission 0.2](../specs/runtime-text-field-submission-0.2.md), [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md) và [ADR-0012](../adr/0012-textfield-submission-acknowledgement-vertical-slice.md).
 
 ### Stable node ID
 
@@ -97,6 +97,10 @@ Protocol có thể mang data, tree, metadata, declarative action và expression 
 ### Actions
 
 Nhóm action built-in được định hướng gồm `Navigate`, `Back`, `UpdateState`, `Submit`, `Refresh`, `OpenUrl`, `ShowDialog`, `ShowMessage`, `Track`, `Composite` và `Custom`. `Custom` vẫn là một action typed được handler client đăng ký trước qua KSP; không phải lệnh gọi method tải từ server.
+
+Runtime 0.2 hiện thực một extension experimental, cố ý hẹp: `LuaAction.SubmitTextFields(actionId, textFieldNodeIds)` yêu cầu `action.submit_text_fields@1` và declaration của nó là allowlist có thứ tự của `TextField` cùng screen, không phải payload map tự do hay lệnh mutation. `LuaActionRequest.textFieldSubmission` mang `submissionId`, node ID, value và draft revision cho đúng allowlist đó. Server re-authorize screen/source/action/capability/allowlist và trả `LuaActionResponse.AcknowledgedScreen` gồm full screen cùng acknowledgement echo ID/revision, không echo raw value lần hai và không có partial acceptance. Client chỉ settle qua `prepareAction`/`complete` sau khi acknowledgement khớp toàn bộ submission; mỗi draft còn phải khớp snapshot local riêng của nó. `Submit@1` và `LuaCapabilities.foundation` không đổi.
+
+Correlation này không giải quyết ordering giữa mọi response, retry delivery, idempotency, cancellation, partial acceptance hay action payload cho component khác; các policy đó vẫn Open. Chi tiết executable nằm tại [TextField Submission 0.2](../specs/runtime-text-field-submission-0.2.md).
 
 ### Expressions
 

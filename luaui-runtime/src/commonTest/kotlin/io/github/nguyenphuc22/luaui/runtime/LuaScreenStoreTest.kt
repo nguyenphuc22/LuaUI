@@ -3,6 +3,7 @@ package io.github.nguyenphuc22.luaui.runtime
 import io.github.nguyenphuc22.luaui.core.LuaAction
 import io.github.nguyenphuc22.luaui.core.LuaActionId
 import io.github.nguyenphuc22.luaui.core.LuaActionResponse
+import io.github.nguyenphuc22.luaui.core.LuaAcknowledgedTextField
 import io.github.nguyenphuc22.luaui.core.LuaCapabilities
 import io.github.nguyenphuc22.luaui.core.LuaCapability
 import io.github.nguyenphuc22.luaui.core.LuaColumnNode
@@ -14,6 +15,8 @@ import io.github.nguyenphuc22.luaui.core.LuaProtocolLimits
 import io.github.nguyenphuc22.luaui.core.LuaScreen
 import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenResponse
+import io.github.nguyenphuc22.luaui.core.LuaSubmissionId
+import io.github.nguyenphuc22.luaui.core.LuaTextFieldAcknowledgement
 import io.github.nguyenphuc22.luaui.core.LuaTextNode
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -152,6 +155,29 @@ class LuaScreenStoreTest {
         val failure = assertIs<LuaScreenStoreState.Failure>(successor.state)
         assertEquals(LuaErrorCode.INVALID_SCREEN, failure.error.code)
         assertTrue(failure.validationIssues.any { issue -> issue.code == "client_capability_missing" })
+    }
+
+    @Test
+    fun `acknowledged response requires its capability-gated TextField extension`() {
+        val response = LuaActionResponse.AcknowledgedScreen(
+            screen = dashboard(),
+            acknowledgement = LuaTextFieldAcknowledgement(
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+                fields = listOf(
+                    LuaAcknowledgedTextField(LuaNodeId("dashboard.filter"), draftRevision = 0),
+                ),
+            ),
+        )
+
+        val rejected = store().accept(response)
+        val failure = assertIs<LuaScreenStoreState.Failure>(rejected.state)
+
+        assertEquals(LuaErrorCode.INVALID_SCREEN, failure.error.code)
+        assertTrue(
+            failure.validationIssues.any { issue ->
+                issue.code == "acknowledged_screen_client_capability_missing"
+            },
+        )
     }
 
     private fun store(

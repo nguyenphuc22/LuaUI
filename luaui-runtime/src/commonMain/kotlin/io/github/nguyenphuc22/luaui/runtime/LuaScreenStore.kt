@@ -5,6 +5,7 @@ import io.github.nguyenphuc22.luaui.core.LuaCapability
 import io.github.nguyenphuc22.luaui.core.LuaError
 import io.github.nguyenphuc22.luaui.core.LuaErrorCode
 import io.github.nguyenphuc22.luaui.core.LuaProtocolLimits
+import io.github.nguyenphuc22.luaui.core.LuaProtocolValidator
 import io.github.nguyenphuc22.luaui.core.LuaScreen
 import io.github.nguyenphuc22.luaui.core.LuaScreenId
 import io.github.nguyenphuc22.luaui.core.LuaScreenResponse
@@ -76,9 +77,28 @@ class LuaScreenStore private constructor(
     fun accept(response: LuaActionResponse): LuaScreenStore = replaceState(
         when (response) {
             is LuaActionResponse.Screen -> stateFor(response.screen)
+            is LuaActionResponse.AcknowledgedScreen -> stateFor(response)
             is LuaActionResponse.Failure -> LuaScreenStoreState.Failure(response.error)
         },
     )
+
+    private fun stateFor(response: LuaActionResponse.AcknowledgedScreen): LuaScreenStoreState {
+        val issues = LuaProtocolValidator.validateActionResponse(
+            response = response,
+            clientCapabilities = clientCapabilities,
+            limits = limits,
+        )
+        if (issues.isNotEmpty()) {
+            return LuaScreenStoreState.Failure(
+                error = LuaError(
+                    code = LuaErrorCode.INVALID_SCREEN,
+                    message = "The client rejected an invalid or incompatible LuaUI acknowledgement.",
+                ),
+                validationIssues = issues,
+            )
+        }
+        return stateFor(response.screen)
+    }
 
     private fun stateFor(screen: LuaScreen): LuaScreenStoreState {
         if (screen.id != screenId) {

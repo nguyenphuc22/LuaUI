@@ -53,9 +53,9 @@ Một UI definition là bất biến. State được phân tách rõ:
 
 Ví dụ: người dùng gõ `1 → 12 → 123 → 1234` vào `TextField` thì text được giữ trong local snapshot state. Client chỉ dispatch `LuaAction` ở thời điểm đúng như debounce, blur hoặc submit. Điều này tránh biến mỗi keystroke thành network request.
 
-ADR-0010 chốt ownership cho full-screen replacement: local state thuộc client, screen-session scoped và chỉ retain khi stable identity lẫn state contract còn tương thích. Draft dirty không bị full response ghi đè ngầm; focus/scroll chỉ restore best-effort ở renderer. Xem [LocalStateStore 0.2](../specs/runtime-local-state-store-0.2.md). Patch conflict, persistence và action acknowledgement vẫn [Open](open-questions.md#offline--local-edits).
+ADR-0010 chốt ownership cho full-screen replacement: local state thuộc client, screen-session scoped và chỉ retain khi stable identity lẫn state contract còn tương thích. Draft dirty không bị full response ghi đè ngầm; focus/scroll chỉ restore best-effort ở renderer. Phase 4 chỉ bổ sung một đường settle có acknowledgement tường minh cho snapshot `TextField` khớp; nó không làm mọi full response trở thành reset. Xem [LocalStateStore 0.2](../specs/runtime-local-state-store-0.2.md). Patch conflict, persistence và ordering toàn cục của action response vẫn [Open](open-questions.md#stable-id--patch).
 
-Runtime 0.2 Phase 3 hiện có vertical slice `TextField`: `LuaLocalStateStore` giữ typed draft, còn `LuaScreenSession` reconcile `LuaNodeStore` candidate và LocalStateStore candidate trước khi host publish một successor. `component.text_field@1` là capability additive; `LuaCapabilities.foundation` không bị mở rộng. Renderer Material 3 chỉ đọc/gửi local draft callback, còn `Submit` vẫn chỉ mang identifier. Xem [LocalStateStore 0.2](../specs/runtime-local-state-store-0.2.md) và [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md).
+Runtime 0.2 Phase 3 hiện có vertical slice `TextField`: `LuaLocalStateStore` giữ typed draft, còn `LuaScreenSession` reconcile `LuaNodeStore` candidate và LocalStateStore candidate trước khi host publish một successor. `component.text_field@1` là capability additive; `LuaCapabilities.foundation` không bị mở rộng. Phase 4 thêm `SubmitTextFields` sau capability `action.submit_text_fields@1`: host gọi `prepareAction` để snapshot đúng allowlist `TextField`, dispatch request typed, rồi gọi `complete` với response. Chỉ khi `complete` nhận `AcknowledgedScreen` có submission ID, thứ tự node và revision khớp toàn bộ snapshot của action trong cùng session lifetime, runtime mới xét settlement; từng draft chỉ settle về `initialValue` server trả về nếu slot generation, revision và value local của chính nó còn khớp snapshot. Acknowledgement hợp lệ đó cũng consume `LuaPreparedAction` một lần để replay không áp dụng replacement thứ hai. `Submit@1` vẫn chỉ mang identifier và `accept` không tự suy diễn reset. Xem [TextField Submission 0.2](../specs/runtime-text-field-submission-0.2.md), [ADR-0011](../adr/0011-textfield-local-draft-vertical-slice.md) và [ADR-0012](../adr/0012-textfield-submission-acknowledgement-vertical-slice.md).
 
 ## NodeStore và reconciliation
 
@@ -85,7 +85,9 @@ User interaction → LuaAction → ActionDispatcher
 
 Action là declarative. Built-in action giúp runtime thực hiện các thao tác phổ biến; custom action được ánh xạ đến handler đã được ứng dụng đăng ký và KSP generate registration. Server không thể yêu cầu client invoke method bất kỳ.
 
-`Composite` phải được giới hạn/validate để tránh action graph không kiểm soát. Quy tắc retry, cancellation, progress và idempotency của network action là phần cần đặc tả trước khi public API ổn định.
+Vertical slice Phase 4 không mở generic action payload. Nó chỉ cho `LuaAction.SubmitTextFields` gửi snapshot typed của `TextField` được action declaration allowlist và server vẫn phải authorize lại source/action/allowlist từ state authoritative. `LuaPreparedAction` giữ snapshot local riêng cho việc match acknowledgement; application không tự dựng map giá trị hay coi plain `Screen` là acknowledgement. `LuaSubmissionId` chỉ correlation settlement cục bộ, không phải idempotency key hay replay protection.
+
+`Composite` phải được giới hạn/validate để tránh action graph không kiểm soát. Quy tắc ordering toàn cục, retry, cancellation, progress và idempotency của network action vẫn cần đặc tả trước khi public API ổn định.
 
 ## Expression engine
 

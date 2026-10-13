@@ -42,4 +42,35 @@ class LuaScreenDslTest {
             ),
         )
     }
+
+    @Test
+    fun `DSL declares a typed TextField submission as a separate action capability`() {
+        val screen = luaScreen("dashboard") {
+            column("dashboard.root") {
+                textField("dashboard.filter", "Filter")
+                button(
+                    "dashboard.apply",
+                    "Apply",
+                    submitTextFields("dashboard.apply", "dashboard.filter"),
+                )
+            }
+        }
+        val supportedCapabilities = LuaCapabilities.foundation + setOf(
+            LuaCapabilities.textField,
+            LuaCapabilities.submitTextFields,
+        )
+
+        assertEquals(
+            setOf(
+                LuaCapabilities.column,
+                LuaCapabilities.button,
+                LuaCapabilities.textField,
+                LuaCapabilities.submitTextFields,
+            ),
+            screen.requiredCapabilities,
+        )
+        assertIs<LuaScreenValidationResult.Valid>(
+            LuaProtocolValidator.validateScreen(screen, supportedCapabilities),
+        )
+    }
 }

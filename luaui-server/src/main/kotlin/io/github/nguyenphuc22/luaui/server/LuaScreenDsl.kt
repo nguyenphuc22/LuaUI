@@ -86,3 +86,17 @@ class LuaColumnBuilder internal constructor(
 }
 
 fun submit(actionId: String): LuaAction.Submit = LuaAction.Submit(LuaActionId(actionId))
+
+/**
+ * Declares a typed, capability-gated submission of these exact TextField node IDs.
+ *
+ * The helper only declares the server allowlist; the Runtime snapshots client-owned values at
+ * dispatch time and the server must still re-authorize the request against authoritative state.
+ */
+fun submitTextFields(
+    actionId: String,
+    vararg textFieldNodeIds: String,
+): LuaAction.SubmitTextFields = LuaAction.SubmitTextFields(
+    actionId = LuaActionId(actionId),
+    textFieldNodeIds = textFieldNodeIds.map(::LuaNodeId),
+)

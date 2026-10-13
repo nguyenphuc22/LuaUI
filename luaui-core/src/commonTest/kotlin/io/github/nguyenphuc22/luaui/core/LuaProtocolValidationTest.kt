@@ -135,6 +135,148 @@ class LuaProtocolValidationTest {
         assertTrue(issues.any { issue -> issue.code == "invalid_capability_version" })
     }
 
+    @Test
+    fun `SubmitTextFields is capability gated and may reference only declared TextFields`() {
+        val root = LuaColumnNode(
+            id = LuaNodeId("dashboard.root"),
+            children = listOf(
+                LuaTextFieldNode(LuaNodeId("dashboard.filter"), "Filter", ""),
+                LuaButtonNode(
+                    id = LuaNodeId("dashboard.apply"),
+                    label = "Apply",
+                    onClick = LuaAction.SubmitTextFields(
+                        actionId = LuaActionId("dashboard.apply"),
+                        textFieldNodeIds = listOf(LuaNodeId("dashboard.filter")),
+                    ),
+                ),
+            ),
+        )
+        val screen = dashboard(root)
+        val supportedCapabilities = LuaCapabilities.foundation + setOf(
+            LuaCapabilities.textField,
+            LuaCapabilities.submitTextFields,
+        )
+
+        assertIs<LuaScreenValidationResult.Valid>(
+            LuaProtocolValidator.validateScreen(screen, supportedCapabilities),
+        )
+        val missingActionCapability = assertIs<LuaScreenValidationResult.Invalid>(
+            LuaProtocolValidator.validateScreen(
+                screen,
+                LuaCapabilities.foundation + LuaCapabilities.textField,
+            ),
+        )
+        assertTrue(
+            missingActionCapability.issues.any { issue -> issue.code == "client_capability_missing" },
+        )
+
+        val invalidRoot = root.copy(
+            children = root.children.dropLast(1) + LuaButtonNode(
+                id = LuaNodeId("dashboard.apply"),
+                label = "Apply",
+                onClick = LuaAction.SubmitTextFields(
+                    actionId = LuaActionId("dashboard.apply"),
+                    textFieldNodeIds = listOf(
+                        LuaNodeId("dashboard.filter"),
+                        LuaNodeId("dashboard.filter"),
+                        LuaNodeId("dashboard.missing"),
+                        LuaNodeId("dashboard.apply"),
+                    ),
+                ),
+            ),
+        )
+        val invalid = assertIs<LuaScreenValidationResult.Invalid>(
+            LuaProtocolValidator.validateScreen(dashboard(invalidRoot)),
+        )
+
+        assertTrue(invalid.issues.any { issue -> issue.code == "duplicate_submit_text_field_node_id" })
+        assertTrue(invalid.issues.any { issue -> issue.code == "submit_text_fields_missing_node" })
+        assertTrue(
+            invalid.issues.any { issue -> issue.code == "submit_text_fields_requires_text_field" },
+        )
+    }
+
+    @Test
+    fun `TextField submission and acknowledgement validate bounded typed fields`() {
+        val request = LuaActionRequest(
+            screenId = LuaScreenId("dashboard"),
+            sourceNodeId = LuaNodeId("dashboard.apply"),
+            actionId = LuaActionId("dashboard.apply"),
+            clientCapabilities = LuaCapabilities.foundation + LuaCapabilities.submitTextFields,
+            textFieldSubmission = LuaTextFieldSubmission(
+                submissionId = LuaSubmissionId("invalid id"),
+                fields = listOf(
+                    LuaSubmittedTextField(LuaNodeId("dashboard.filter"), "long", draftRevision = -1),
+                    LuaSubmittedTextField(LuaNodeId("dashboard.filter"), "again", draftRevision = 0),
+                ),
+            ),
+        )
+
+        val requestIssues = LuaProtocolValidator.validateActionRequest(
+            request,
+            limits = LuaProtocolLimits(maxSubmittedTextFieldValueLength = 3),
+        )
+        assertTrue(requestIssues.any { issue -> issue.code == "invalid_identifier" })
+        assertTrue(requestIssues.any { issue -> issue.code == "duplicate_submitted_field_node_id" })
+        assertTrue(
+            requestIssues.any { issue -> issue.code == "submitted_text_field_value_length_exceeded" },
+        )
+        assertTrue(requestIssues.any { issue -> issue.code == "negative_submitted_draft_revision" })
+
+        val acknowledgementIssues = LuaProtocolValidator.validateTextFieldAcknowledgement(
+            LuaTextFieldAcknowledgement(
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+                fields = listOf(
+                    LuaAcknowledgedTextField(LuaNodeId("dashboard.filter"), draftRevision = -1),
+                    LuaAcknowledgedTextField(LuaNodeId("dashboard.filter"), draftRevision = 0),
+                ),
+            ),
+        )
+        assertTrue(
+            acknowledgementIssues.any { issue -> issue.code == "duplicate_acknowledged_field_node_id" },
+        )
+        assertTrue(
+            acknowledgementIssues.any { issue -> issue.code == "negative_acknowledged_draft_revision" },
+        )
+    }
+
+    @Test
+    fun `AcknowledgedScreen requires both TextField extension capabilities from a client`() {
+        val response = LuaActionResponse.AcknowledgedScreen(
+            screen = dashboard(),
+            acknowledgement = LuaTextFieldAcknowledgement(
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+                fields = listOf(
+                    LuaAcknowledgedTextField(LuaNodeId("dashboard.filter"), draftRevision = 0),
+                ),
+            ),
+        )
+
+        val foundationOnly = LuaProtocolValidator.validateActionResponse(
+            response = response,
+            clientCapabilities = LuaCapabilities.foundation,
+        )
+        val missingTextField = LuaProtocolValidator.validateActionResponse(
+            response = response,
+            clientCapabilities = LuaCapabilities.foundation + LuaCapabilities.submitTextFields,
+        )
+        val supported = LuaProtocolValidator.validateActionResponse(
+            response = response,
+            clientCapabilities = LuaCapabilities.foundation + setOf(
+                LuaCapabilities.textField,
+                LuaCapabilities.submitTextFields,
+            ),
+        )
+
+        assertTrue(
+            foundationOnly.any { issue -> issue.code == "acknowledged_screen_client_capability_missing" },
+        )
+        assertTrue(
+            missingTextField.any { issue -> issue.code == "acknowledged_screen_client_capability_missing" },
+        )
+        assertTrue(supported.isEmpty())
+    }
+
     private fun dashboard(root: LuaNode = defaultRoot()): LuaScreen = LuaScreen(
         id = LuaScreenId("dashboard"),
         root = root,

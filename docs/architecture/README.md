@@ -71,13 +71,14 @@ luaui-core · luaui-compose · luaui-material3 · luaui-annotations
 luaui-ksp · luaui-transport · luaui-server · sample
 ```
 
-Sau khi vertical slice chứng minh core contract, Runtime 0.2 thêm `luaui-runtime` cho NodeStore/ScreenStore và một LocalStateStore/TextField vertical slice experimental. Không có dependency bắt buộc kiểu `luaui-all`. Adapter cho gRPC, SQLDelight, OpenTelemetry, analytics hay design system tùy chỉnh được thêm sau khi có consumer và contract tương ứng.
+Sau khi vertical slice chứng minh core contract, Runtime 0.2 thêm `luaui-runtime` cho NodeStore/ScreenStore, LocalStateStore/TextField và một vertical slice experimental hẹp cho typed TextField submission/acknowledgement. Slice này giữ `Submit@1` identifiers-only, còn `SubmitTextFields` được capability-gated và settle draft chỉ qua acknowledgement khớp; nó không giải quyết ordering/retry/idempotency toàn cục. Không có dependency bắt buộc kiểu `luaui-all`. Adapter cho gRPC, SQLDelight, OpenTelemetry, analytics hay design system tùy chỉnh được thêm sau khi có consumer và contract tương ứng.
 
 ## Đọc tiếp
 
 - [Protocol & compatibility](protocol.md)
 - [Runtime & rendering](runtime.md)
 - [LocalStateStore 0.2](../specs/runtime-local-state-store-0.2.md)
+- [TextField Submission 0.2](../specs/runtime-text-field-submission-0.2.md)
 - [Platform & integration](platform.md)
 - [Quality & operations](quality.md)
 - [Các câu hỏi cần đặc tả](open-questions.md)
