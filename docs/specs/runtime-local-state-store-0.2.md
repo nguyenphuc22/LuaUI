@@ -74,7 +74,7 @@ Draft có `value`, server-provided baseline và dirty/pristine status. Khi node 
 - Draft dirty giữ local `value`; full response chỉ cập nhật baseline, không overwrite text user đang sửa hoặc tự clear `dirty`.
 - Draft pristine được reseed bằng default/baseline mới từ server.
 - Keystroke chỉ cập nhật local state. Giá trị chỉ đi lên server một lần tại boundary `SubmitTextFields` typed/capability-gated; debounce, blur và những payload khác chưa có contract.
-- `LuaScreenSession.accept(...)` không coi bất kỳ full response nào là acknowledgement hoặc reset. Chỉ `complete(preparedAction, AcknowledgedScreen)` có thể settle draft: acknowledgement phải khớp exact submission ID/node order/revision với snapshot, cùng session lifetime; local slot generation, revision và value vẫn phải khớp để ack chậm không overwrite keystroke mới. Baseline chuẩn hóa lấy từ `initialValue` của replacement screen.
+- `LuaScreenSession.accept(...)` không coi bất kỳ full response nào là acknowledgement hoặc reset. Chỉ `complete(preparedAction, AcknowledgedScreen)` có thể settle draft: acknowledgement phải khớp exact submission ID/node order/revision với snapshot, cùng session lifetime; local slot generation, revision và value vẫn phải khớp để ack chậm không overwrite keystroke mới. Khi reconcile acknowledgement response, revision/value đã đổi kể từ submit vẫn được giữ—even nếu user đã gõ quay về baseline cũ khiến draft tạm pristine—rồi baseline chuẩn hóa mới lấy từ `initialValue` của replacement screen.
 
 ### Expanded/selection — chưa hiện thực
 

@@ -258,6 +258,36 @@ class LuaScreenSessionTest {
     }
 
     @Test
+    fun `late acknowledgement preserves a newer edit that returned to its old baseline`() {
+        val initial = readyFormSession(initialValue = "all")
+        val submittedSession = initial.updateTextField(filter(initial).id, "rice")
+        val prepared = assertIs<LuaPreparedAction>(
+            submittedSession.prepareAction(
+                sourceNodeId = LuaNodeId("dashboard.apply"),
+                action = applyAction(submittedSession),
+                submissionId = LuaSubmissionId("dashboard.submit.1"),
+            ),
+        )
+        val submitted = requireNotNull(prepared.request.textFieldSubmission)
+        val newerEdit = submittedSession.updateTextField(filter(submittedSession).id, "all")
+
+        val completed = newerEdit.complete(
+            prepared,
+            acknowledgedResponse(
+                screen = formDashboard(initialValue = "rice"),
+                submissionId = submitted.submissionId,
+                draftRevision = submitted.fields.single().draftRevision,
+            ),
+        )
+        val draft = completed.localStateStore.draftFor(filter(completed))
+
+        assertEquals("all", draft.value)
+        assertEquals("rice", draft.serverBaseline)
+        assertEquals(2, draft.draftRevision)
+        assertTrue(draft.isDirty)
+    }
+
+    @Test
     fun `matching acknowledgement settles each unchanged draft independently`() {
         val initial = readyTwoFieldFormSession(firstInitialValue = "all", secondInitialValue = "all")
         val submittedSession = initial

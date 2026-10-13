@@ -16,6 +16,8 @@ import io.github.nguyenphuc22.luaui.core.LuaSubmittedTextField
 import io.github.nguyenphuc22.luaui.core.LuaTextFieldAcknowledgement
 import io.github.nguyenphuc22.luaui.core.LuaTextFieldNode
 import io.github.nguyenphuc22.luaui.core.LuaTextFieldSubmission
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * One immutable, screen-session-scoped publication unit.
@@ -172,13 +174,20 @@ class LuaScreenSession private constructor(
     ): LuaScreenSession {
         if (!preparedAction.belongsTo(lifetime)) return this
         if (response !is LuaActionResponse.AcknowledgedScreen) return accept(response)
-        if (!preparedAction.matches(response.acknowledgement)) return this
+        if (!preparedAction.matchesAcknowledgement(response.acknowledgement)) return this
 
-        val replacement = replaceScreenStore(screenStore.accept(response))
-        val ready = replacement.screenStore.state as? LuaScreenStoreState.Ready ?: return replacement
+        val successorScreenStore = screenStore.accept(response)
+        val ready = successorScreenStore.state as? LuaScreenStoreState.Ready
+            ?: return replaceScreenStore(successorScreenStore)
         // A prepared invocation is single-use after a valid matching acknowledgement. This keeps
         // a replay from applying a second replacement screen through the same correlation token.
-        preparedAction.consumeAcknowledgement()
+        // The compare-and-set is deliberately after response validation: an invalid response must
+        // not consume a prepared invocation that may still receive a valid response later.
+        if (!preparedAction.tryConsumeAcknowledgement(response.acknowledgement)) return this
+        val replacement = replaceScreenStore(
+            successorScreenStore = successorScreenStore,
+            preserveNewerSubmissionDrafts = preparedAction.localSnapshots(),
+        )
         val settledLocalState = replacement.localStateStore.acknowledgeTextFieldSubmission(
             nodeStore = ready.nodeStore,
             snapshots = preparedAction.localSnapshots(),
@@ -218,9 +227,15 @@ class LuaScreenSession private constructor(
         )
     }
 
-    private fun replaceScreenStore(successorScreenStore: LuaScreenStore): LuaScreenSession {
+    private fun replaceScreenStore(
+        successorScreenStore: LuaScreenStore,
+        preserveNewerSubmissionDrafts: List<LuaSubmittedTextFieldSnapshot> = emptyList(),
+    ): LuaScreenSession {
         val successorLocalState = when (val state = successorScreenStore.state) {
-            is LuaScreenStoreState.Ready -> localStateStore.reconcile(state.nodeStore)
+            is LuaScreenStoreState.Ready -> localStateStore.reconcile(
+                nodeStore = state.nodeStore,
+                preserveNewerSubmissionDrafts = preserveNewerSubmissionDrafts,
+            )
             LuaScreenStoreState.Loading,
             is LuaScreenStoreState.Incompatible,
             is LuaScreenStoreState.Failure,
@@ -264,20 +279,20 @@ internal class LuaScreenSessionLifetime
  * Its default object representation deliberately does not print submitted values. Applications
  * should also treat [request] as sensitive input and avoid logging it verbatim.
  */
+@OptIn(ExperimentalAtomicApi::class)
 class LuaPreparedAction internal constructor(
     val request: LuaActionRequest,
     private val lifetime: LuaScreenSessionLifetime,
     private val submission: LuaTextFieldSubmission?,
     private val localSnapshots: List<LuaSubmittedTextFieldSnapshot>,
 ) {
-    private var acknowledgementConsumed: Boolean = false
+    private val acknowledgementConsumed = AtomicBoolean(false)
 
     internal fun belongsTo(candidate: LuaScreenSessionLifetime): Boolean = lifetime === candidate
 
-    internal fun matches(acknowledgement: LuaTextFieldAcknowledgement): Boolean {
+    internal fun matchesAcknowledgement(acknowledgement: LuaTextFieldAcknowledgement): Boolean {
         val expected = submission ?: return false
-        return !acknowledgementConsumed &&
-            acknowledgement.submissionId == expected.submissionId &&
+        return acknowledgement.submissionId == expected.submissionId &&
             acknowledgement.fields.size == expected.fields.size &&
             acknowledgement.fields.zip(expected.fields).all { (acknowledged, submitted) ->
                 acknowledged.nodeId == submitted.nodeId &&
@@ -285,8 +300,10 @@ class LuaPreparedAction internal constructor(
             }
     }
 
-    internal fun consumeAcknowledgement() {
-        acknowledgementConsumed = true
+    /** Atomically claims one valid matching acknowledgement for this prepared invocation. */
+    internal fun tryConsumeAcknowledgement(acknowledgement: LuaTextFieldAcknowledgement): Boolean {
+        if (!matchesAcknowledgement(acknowledgement)) return false
+        return acknowledgementConsumed.compareAndSet(expectedValue = false, newValue = true)
     }
 
     internal fun localSnapshots(): List<LuaSubmittedTextFieldSnapshot> = localSnapshots

@@ -61,15 +61,34 @@ class LuaLocalStateStore private constructor(
      * Removed nodes are omitted from the new map, so a later reappearance starts fresh instead
      * of reviving a stale draft.
      */
-    internal fun reconcile(nodeStore: LuaNodeStore): LuaLocalStateStore {
+    internal fun reconcile(
+        nodeStore: LuaNodeStore,
+        preserveNewerSubmissionDrafts: List<LuaSubmittedTextFieldSnapshot> = emptyList(),
+    ): LuaLocalStateStore {
         if (nodeStore.screenId != screenId) return this
 
+        val snapshotsByNodeId = preserveNewerSubmissionDrafts.associateBy(
+            LuaSubmittedTextFieldSnapshot::nodeId,
+        )
         val successorDrafts = linkedMapOf<LuaNodeId, LuaTextFieldDraft>()
         var successorNextSlotGeneration = nextSlotGeneration
         nodeStore.nodeIdsInPreorder.forEach { nodeId ->
             val node = nodeStore.find(nodeId)?.node as? LuaTextFieldNode ?: return@forEach
             val previous = textFieldDrafts[nodeId]
             successorDrafts[nodeId] = when {
+                previous != null && previous.differsFrom(snapshotsByNodeId[nodeId]) -> {
+                    // An acknowledgement replacement is allowed to refresh the server baseline,
+                    // but it must not erase a post-submit edit merely because that edit happens
+                    // to equal the old baseline and is therefore locally pristine.
+                    LuaTextFieldDraft(
+                        value = previous.value,
+                        serverBaseline = node.initialValue,
+                        isDirty = previous.value != node.initialValue,
+                        draftRevision = previous.draftRevision,
+                        slotGeneration = previous.slotGeneration,
+                    )
+                }
+
                 previous?.isDirty == true -> {
                     // A server replacement can refresh the baseline but never silently overwrite
                     // or acknowledge a dirty local draft.
@@ -192,6 +211,12 @@ class LuaTextFieldDraft internal constructor(
         result = 31 * result + slotGeneration.hashCode()
         return result
     }
+
+    internal fun differsFrom(snapshot: LuaSubmittedTextFieldSnapshot?): Boolean = snapshot != null && (
+        slotGeneration != snapshot.slotGeneration ||
+            draftRevision != snapshot.draftRevision ||
+            value != snapshot.value
+        )
 
     internal companion object {
         fun pristine(

@@ -56,7 +56,7 @@ session = session.complete(prepared, response)
 4. local slot generation, revision và value hiện tại vẫn là snapshot đã gửi;
 5. node vẫn là TextField compatible trong replacement screen.
 
-Runtime reconcile replacement trước. Khi mọi điều kiện khớp, draft thành pristine ở `initialValue` server trả về và prepared invocation được consume một lần. Nếu user gõ sau khi gửi, revision đổi nên ack cũ không overwrite draft mới. Nếu node bị remove/type-change, entry bị prune theo policy Phase 3 và không revive.
+Runtime validate replacement trước, rồi atomically claim prepared invocation một lần trước khi reconcile/settle. Khi mọi điều kiện khớp, draft thành pristine ở `initialValue` server trả về. Nếu user gõ sau khi gửi, runtime giữ value/revision mới hơn khi reconcile—even nếu value đó quay về baseline cũ và tạm thời là pristine—sau đó cập nhật baseline mới; ack cũ không overwrite draft mới. Nếu node bị remove/type-change, entry bị prune theo policy Phase 3 và không revive.
 
 `All-or-nothing` mô tả việc server chấp nhận toàn submission và acknowledgement phải khớp toàn bộ snapshot; nó không ghi đè freshness của từng draft local. Sau khi acknowledgement hợp lệ, mỗi field chưa đổi kể từ lúc gửi có thể settle độc lập; field đã được user sửa tiếp vẫn dirty và giữ value mới hơn.
 
